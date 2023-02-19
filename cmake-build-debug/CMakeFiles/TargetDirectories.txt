@@ -1,0 +1,3 @@
+C:/Users/paulo/CLionProjects/EQmount_custom_controller/EQ_CONTROLLER/cmake-build-debug/CMakeFiles/EQ_CONTROLLER.elf.dir
+C:/Users/paulo/CLionProjects/EQmount_custom_controller/EQ_CONTROLLER/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/paulo/CLionProjects/EQmount_custom_controller/EQ_CONTROLLER/cmake-build-debug/CMakeFiles/rebuild_cache.dir

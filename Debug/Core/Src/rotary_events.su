@@ -1,0 +1,6 @@
+../Core/Src/rotary_events.c:14:6:rotary_set_dir	8	static
+../Core/Src/rotary_events.c:19:6:rotary_set_press	4	static
+../Core/Src/rotary_events.c:23:7:rotary_pop_dir	16	static
+../Core/Src/rotary_events.c:35:6:rotary_pop_press	16	static
+../Core/Src/rotary_events.c:47:7:rotary_peek_dir	4	static
+../Core/Src/rotary_events.c:52:6:rotary_peek_press	4	static
