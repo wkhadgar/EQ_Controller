@@ -26,11 +26,13 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <memory.h>
 #include "math.h"
 #include "sh1106.h"
 #include "nrf24l01p.h"
 #include "rotary_events.h"
 #include "astro_targets.h"
+#include "variables.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -92,13 +94,12 @@ typedef enum {
 #define ROW_SPACE_PX 10
 #define SELECTION_ARROW_DELAY 20
 #define DEG_TO_RAD_CONST (M_PI / 180)
-#define PAYLOAD_LEN 10
-
+#define EQM_RF_CHANNEL 120
+#define PLD_LEN 32
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -186,15 +187,14 @@ struct {
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+
 /* USER CODE BEGIN PFP */
 void nRF24_TX_ESB_setup(void);
 
-bool send_data(uint8_t* nRF24_payload, uint8_t payload_length);
+bool send_data(const uint8_t* nRF24_payload, uint8_t payload_length);
 
 /**
  * @brief Deals with the list menu arithmetic, should always be called before actually showing the menu.
- *
- * @return true if there was a switch press, false otherwise.
  */
 void load_list_menu_changes(void);
 
@@ -227,96 +227,127 @@ void show_monitor();
   * @retval int
   */
 int main(void) {
-    /* USER CODE BEGIN 1 */
-    /* USER CODE END 1 */
-
-    /* MCU Configuration--------------------------------------------------------*/
-
-    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-    HAL_Init();
-
-    /* USER CODE BEGIN Init */
-
-    /* USER CODE END Init */
-
-    /* Configure the system clock */
-    SystemClock_Config();
-
-    /* USER CODE BEGIN SysInit */
-
-    /* USER CODE END SysInit */
-
-    /* Initialize all configured peripherals */
-    MX_GPIO_Init();
-    MX_ADC1_Init();
-    MX_I2C2_Init();
-    MX_SPI2_Init();
-    /* USER CODE BEGIN 2 */
-
-    bool was_selected[_SCREEN_AMOUNT] = {false};
-    uint8_t init_payload[PAYLOAD_LEN] = "INIT";
-
-    SH1106_cleanInit();
-    nRF24_TX_ESB_setup();
-    astro_targets_init();
-
-    SH1106_drawBitmapFullscreen(eqmount_logo);
-    SH1106_flush();
-    HAL_Delay(2000);
+	/* USER CODE BEGIN 1 */
+	
+	/* USER CODE END 1 */
+	
+	/* MCU Configuration--------------------------------------------------------*/
+	
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
+	
+	/* USER CODE BEGIN Init */
+	
+	/* USER CODE END Init */
+	
+	/* Configure the system clock */
+	SystemClock_Config();
+	
+	/* USER CODE BEGIN SysInit */
+	
+	/* USER CODE END SysInit */
+	
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_ADC1_Init();
+	MX_I2C2_Init();
+	MX_SPI2_Init();
+	/* USER CODE BEGIN 2 */
+	
+	bool was_selected[_SCREEN_AMOUNT] = {false};
+	const uint8_t ack_pld[] = "ACK";
+	const uint8_t init_payload[PLD_LEN] = "INIT";
+	uint8_t recv_payload[PLD_LEN] = {0};
+	uint8_t pld_len;
+	
+	SH1106_cleanInit();
+	astro_targets_init();
+	
+	SH1106_drawBitmapFullscreen(eqmount_logo);
+	SH1106_flush();
+	HAL_Delay(2000);
 
 #ifdef USE_NRF24L01
-    uint16_t retries = 0;
-    while (!nRF24_Check()) {
-        retries++;
-        SH1106_clear();
-        SH1106_printStr(20, (SCR_H / 2) - 8, "ERRO - NRF24", fnt7x10);
-        SH1106_printStr(20, (3 * SCR_H / 4) - 8, "Retries:", fnt7x10);
-        SH1106_printInt(85, (3 * SCR_H / 4) - 8, retries, fnt7x10);
-        SH1106_flush();
-        HAL_Delay(1000);
-    }
-
-    retries = 0;
-    while (!send_data(init_payload, PAYLOAD_LEN)) {
-        retries++;
-        SH1106_clear();
-        SH1106_printStr(3, (SCR_H / 2) - 8, "ERRO - NO MOUNT", fnt7x10);
-        SH1106_printStr(20, (3 * SCR_H / 4) - 8, "Retries:", fnt7x10);
-        SH1106_printInt(85, (3 * SCR_H / 4) - 8, retries, fnt7x10);
-        SH1106_flush();
-        HAL_Delay(500);
-    }
+	uint16_t retries = 0;
+	bool is_connected = false;
+	char* loading_points[] = {"", ".", "..", "..."};
+	char str_buff[32] = {0};
+	
+	while (!nRF24_check()) {
+		retries++;
+		SH1106_clear();
+		SH1106_printStr(20, (SCR_H / 2) - 8, "ERRO - NRF24", fnt7x10);
+		sprintf(str_buff, "Retries: %d", retries);
+		SH1106_printStr(20, (3 * SCR_H / 4) - 8, str_buff, fnt7x10);
+		SH1106_flush();
+		HAL_Delay(100);
+	}
+	nRF24_TX_ESB_setup();
+	
+	retries = 0;
+	while (!is_connected) {
+		while (!get_flag(NRF_RECEIVE)) {
+			nRF24_SetOperationalMode(nRF24_MODE_TX);
+			HAL_Delay(10);
+			send_data(init_payload, PLD_LEN);
+			nRF24_SetOperationalMode(nRF24_MODE_RX);
+			HAL_Delay(10);
+			SH1106_clear();
+			SH1106_printStr(3, (SCR_H / 2) - 12, "Mount not found", fnt7x10);
+			sprintf(str_buff, "Searching %s", loading_points[(retries / 5) % 4]);
+			SH1106_printStr(15, (3 * SCR_H / 4) - 12, str_buff, fnt7x10);
+			SH1106_flush();
+			retries++;
+		}
+		clear_flag(NRF_RECEIVE);
+		
+		if (nRF24_GetStatus_RXFIFO() != nRF24_STATUS_RXFIFO_EMPTY) {
+			// Get a payload from the transceiver
+			nRF24_ReadPayload(recv_payload, &pld_len);
+			
+			is_connected = true;
+		}
+		
+		if (is_connected) {
+			for (uint8_t i = 0; i < 3; i++) {
+				if (recv_payload[i] != ack_pld[i]) {
+					is_connected = false;
+				}
+			}
+		}
+	}
+	nRF24_SetOperationalMode(nRF24_MODE_TX);
 
 #endif
-
-    /* USER CODE END 2 */
-
-    /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
-    while (1) {
-        /* USER CODE END WHILE */
-
-        /* USER CODE BEGIN 3 */
-        switch (screen.curr_screen) {
-
-            case MENU_SCREEN:
-                load_list_menu_changes();
-                switch (screen.kind.menu) {
-
-                    case MAIN_MENU:
-                        show_main_menu();
-                        break;
-                    case TARGET_MENU:
-                        show_target_menu();
-                        break;
-                    case EQM_MODE_MENU:
-                        show_mode_menu();
-                        break;
-                }
-                break;
-            case SETTINGS_SCREEN:
-                load_settings_changes();
-                show_settings_adjust(screen.kind.setting);
+	
+	/* USER CODE END 2 */
+	
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
+	while (1) {
+		/* USER CODE END WHILE */
+		
+		/* USER CODE BEGIN 3 */
+		switch (screen.curr_screen) {
+			
+			case MENU_SCREEN:
+				load_list_menu_changes();
+				switch (screen.kind.menu) {
+					
+					case MAIN_MENU:
+						show_main_menu();
+						break;
+					case TARGET_MENU:
+						show_target_menu();
+						break;
+					case EQM_MODE_MENU:
+						show_mode_menu();
+						break;
+				}
+				break;
+			case SETTINGS_SCREEN:
+				load_settings_changes();
+				show_settings_adjust(screen.kind.setting);
 				break;
 			case MONITOR_SCREEN:
 				show_monitor();
@@ -339,7 +370,7 @@ int main(void) {
 		}
 		
 	}
-    /* USER CODE END 3 */
+	/* USER CODE END 3 */
 }
 
 /**
@@ -347,118 +378,80 @@ int main(void) {
   * @retval None
   */
 void SystemClock_Config(void) {
-    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-    RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-
-    /** Initializes the RCC Oscillators according to the specified parameters
-    * in the RCC_OscInitTypeDef structure.
-    */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-    RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
-    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
-    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
-        Error_Handler();
-    }
-
-    /** Initializes the CPU, AHB and APB buses clocks
-    */
-    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
-                                  | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
-    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
-        Error_Handler();
-    }
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-    PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
-        Error_Handler();
-    }
+	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+	RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+	
+	/** Initializes the RCC Oscillators according to the specified parameters
+	* in the RCC_OscInitTypeDef structure.
+	*/
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+	RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL8;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+		Error_Handler();
+	}
+	
+	/** Initializes the CPU, AHB and APB buses clocks
+	*/
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+								  | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+	
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
+		Error_Handler();
+	}
+	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+	PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
+	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
+		Error_Handler();
+	}
 }
 
 /* USER CODE BEGIN 4 */
 void nRF24_TX_ESB_setup(void) {
 	
-	// This is simple transmitter with Enhanced ShockBurst (to one logic address):
-	//   - TX address: 'ESB'
-	//   - payload: 10 bytes
-	//   - RF channel: 40 (2440MHz)
-	//   - data rate: 250kbps
-	//   - CRC scheme: 2 byte
-	
-	// The transmitter sends a 10-byte packets to the address 'ESB' with Auto-ACK (ShockBurst enabled)
-	
-	// Set RF channel9
-	nRF24_SetRFChannel(40);
-	
-	// Set data rate
-	nRF24_SetDataRate(nRF24_DR_2Mbps);
-	
-	// Set CRC scheme
-	nRF24_SetCRCScheme(nRF24_CRC_2byte);
-	
-	// Set address width, its common for all pipes (RX and TX)
-	nRF24_SetAddrWidth(3);
-	
 	// Configure TX PIPE
-	static const uint8_t nRF24_ADDR[] = {'E', 'S', 'B'};
-	nRF24_SetAddr(nRF24_PIPETX, nRF24_ADDR); // program TX address
-	nRF24_SetAddr(nRF24_PIPE0, nRF24_ADDR); // program address for pipe#0, must be same as TX (for Auto-ACK)
+	static const uint8_t nRF24_ADDR[] = "EQM0";
 	
-	// Set TX power (maximum)
-	nRF24_SetTXPower(nRF24_TXPWR_0dBm);
+	// Do the initial configurations.
+	nRF24_SetPowerMode(nRF24_PWR_DOWN);
 	
-	// Configure auto retransmit: 10 retransmissions with pause of 2500s in between
-	nRF24_SetAutoRetr(nRF24_ARD_2500us, 10);
-	
-	// Enable Auto-ACK for pipe#0 (for ACK packets)
-	nRF24_EnableAA(nRF24_PIPE0);
-	
-	// Set operational mode (PTX == transmitter)
+	nRF24_PTX_init(nRF24_ADDR, EQM_RF_CHANNEL);
 	nRF24_SetOperationalMode(nRF24_MODE_TX);
+	nRF24_SetAddr(nRF24_PIPE0, nRF24_ADDR);
+	nRF24_SetAddr(nRF24_PIPETX, nRF24_ADDR);
+	nRF24_SetRFChannel(EQM_RF_CHANNEL);
+	nRF24_SetAutoRetr(nRF24_ARD_NONE, 0);
+	nRF24_SetRXPipe(nRF24_PIPE0, nRF24_AA_OFF, PLD_LEN);
+	nRF24_SetDynamicPayloadLength(nRF24_DPL_OFF);
+	nRF24_SetCRCScheme(nRF24_CRC_off);
 	
-	// Clear any pending IRQ flags
-	nRF24_ClearIRQFlags();
-	
-	// Enable DPL
-	nRF24_SetDynamicPayloadLength(nRF24_DPL_ON);
-
-	// Wake the transceiver
 	nRF24_SetPowerMode(nRF24_PWR_UP);
 }
 
-bool send_data(uint8_t* nRF24_payload, uint8_t payload_length) {
+bool send_data(const uint8_t* nRF24_payload, uint8_t payload_length) {
 	
-	nRF24_TXResult tx_res = nRF24_TX_ERROR;
-	uint8_t otx = 0;
-	uint8_t otx_plos_cnt = 0; // lost packet count
-	uint8_t otx_arc_cnt = 0; // retransmit count
+	nRF24_TXResult tx_res;
 	
 	if (payload_length > 32) {
 		return false;
 	}
 	
-	
 	// Transmit a packet
 	tx_res = nRF24_TransmitPacket(nRF24_payload, payload_length);
-	otx = nRF24_GetRetransmitCounters();
-	otx_plos_cnt = (otx & nRF24_MASK_PLOS_CNT) >> 4; // packets lost counter
-	otx_arc_cnt = (otx & nRF24_MASK_ARC_CNT); // auto retransmissions counter
 	
-	HAL_Delay(10);
 	switch (tx_res) {
 		case nRF24_TX_SUCCESS:
 			return true;
 		case nRF24_TX_MAXRT:
-			packets_lost += otx_plos_cnt;
 			nRF24_ResetPLOS();
 			break;
 		case nRF24_TX_TIMEOUT:
@@ -911,12 +904,12 @@ void load_settings_changes(void) {
   * @retval None
   */
 void Error_Handler(void) {
-    /* USER CODE BEGIN Error_Handler_Debug */
-    /* User can add his own implementation to report the HAL error return state */
-    __disable_irq();
-    while (1) {
-    }
-    /* USER CODE END Error_Handler_Debug */
+	/* USER CODE BEGIN Error_Handler_Debug */
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1) {
+	}
+	/* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT

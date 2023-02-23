@@ -70,8 +70,11 @@ void Error_Handler(void);
 #define ROT_BUT_Pin GPIO_PIN_10
 #define ROT_BUT_GPIO_Port GPIOA
 #define ROT_BUT_EXTI_IRQn EXTI15_10_IRQn
+#define NRF_IRQ_Pin GPIO_PIN_3
+#define NRF_IRQ_GPIO_Port GPIOB
+#define NRF_IRQ_EXTI_IRQn EXTI3_IRQn
 /* USER CODE BEGIN Private defines */
-
+#define USE_NRF24L01
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
