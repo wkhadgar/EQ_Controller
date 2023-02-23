@@ -1,3 +1,0 @@
-../Core/Src/astro_targets.c:124:6:astro_targets_init	12	static
-../Core/Src/astro_targets.c:133:6:astro_user_target_set	12	static
-../Core/Src/astro_targets.c:141:16:astro_target_get	24	static
