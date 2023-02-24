@@ -60,8 +60,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define V_BAT_Pin GPIO_PIN_1
 #define V_BAT_GPIO_Port GPIOA
-#define SPI_CS1_Pin GPIO_PIN_12
-#define SPI_CS1_GPIO_Port GPIOB
+#define NRF_CS_Pin GPIO_PIN_12
+#define NRF_CS_GPIO_Port GPIOB
 #define ROT_TRIG_Pin GPIO_PIN_8
 #define ROT_TRIG_GPIO_Port GPIOA
 #define ROT_TRIG_EXTI_IRQn EXTI9_5_IRQn
@@ -70,6 +70,8 @@ void Error_Handler(void);
 #define ROT_BUT_Pin GPIO_PIN_10
 #define ROT_BUT_GPIO_Port GPIOA
 #define ROT_BUT_EXTI_IRQn EXTI15_10_IRQn
+#define NRF_CE_Pin GPIO_PIN_15
+#define NRF_CE_GPIO_Port GPIOA
 #define NRF_IRQ_Pin GPIO_PIN_3
 #define NRF_IRQ_GPIO_Port GPIOB
 #define NRF_IRQ_EXTI_IRQn EXTI3_IRQn
