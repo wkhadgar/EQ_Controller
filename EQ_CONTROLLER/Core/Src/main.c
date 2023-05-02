@@ -32,7 +32,7 @@
 #include "nrf24l01p.h"
 #include "rotary_events.h"
 #include "astro_targets.h"
-#include "variables.h"
+#include "flags.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -79,6 +79,7 @@ typedef enum {
     DECLINATION,
     RIGHT_ASCENSION,
     TGT_SELECTION,
+    UPDT_HOME,
     CONTRAST,
     CONTRAST_TIME,
     HEMISPHERE,
@@ -94,8 +95,13 @@ typedef enum {
 #define ROW_SPACE_PX 10
 #define SELECTION_ARROW_DELAY 20
 #define DEG_TO_RAD_CONST (M_PI / 180)
-#define EQM_RF_CHANNEL 73
+
+#define EQM_RF_CHANNEL 0
 #define TEST_CARRIER 0
+
+#if TEST_CARRIER == 1
+#define ITERATIONS 300
+#endif
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -113,6 +119,7 @@ char* main_menu_strings[_MAIN_MENU_AMOUNT] = {
         [DECLINATION] = "DEC",
         [RIGHT_ASCENSION] = "RA",
         [TGT_SELECTION] = "Target Selection",
+        [UPDT_HOME] = "Update Home",
         [CONTRAST] = "Contrast",
         [CONTRAST_TIME] = "Screen Light",
         [HEMISPHERE] = "Hemisphere",
@@ -187,7 +194,6 @@ struct {
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-
 /* USER CODE BEGIN PFP */
 void nRF24_TX_ESB_setup(const uint8_t* addr);
 
@@ -219,6 +225,8 @@ void show_monitor();
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
+
+static void update_home_handler();
 
 /**
   * @brief  The application entry point.
@@ -253,28 +261,37 @@ int main(void) {
     /* USER CODE BEGIN 2 */
 
     bool was_selected[_SCREEN_AMOUNT] = {false};
-    const uint8_t ack_pld[] = "ACK";
-    const uint8_t init_payload[PLD_LEN] = "INIT";
     static const uint8_t nRF24_ADDR[] = "EQM0";
-    uint8_t recv_payload[PLD_LEN] = {0};
-    uint8_t pld_len;
+
+    nrf24_data_t recv_data = {0};
+
+    const nrf24_data_t init_msg = {
+            .kind = COMMAND,
+            .size = {
+                    .data = 7,
+                    .payload = PLD_LEN,
+            },
+            .data = "Connect",
+    };
 
     astro_targets_init();
     nRF24_TX_ESB_setup(nRF24_ADDR);
     SH1106_cleanInit();
-    SH1106_drawBitmapFullscreen(eqmount_logo);
+    //SH1106_drawBitmapFullscreen(eqmount_logo);
+    SH1106_drawBitmapFullscreen(tury_hmi);
     SH1106_flush();
+    while (1); /** Test screen only*/
     HAL_Delay(2000);
 
 #if TEST_CARRIER == 1
-    uint8_t channel_offset = 0;
+    uint16_t channel_offset = 0;
     while (true) {
         /** Keep sending the carrier */
         nRF24_StartCarrier(nRF24_TXPWR_0dBm,
-                           (uint8_t) (EQM_RF_CHANNEL + 64 + 10 * cos((channel_offset * 2 * 3.14) / 127)));
-        HAL_Delay(10);
+                           (uint8_t) (EQM_RF_CHANNEL + 64 * cos((channel_offset / (double) ITERATIONS) * 2 * 3.1415)));
+        HAL_Delay(1);
         channel_offset++;
-        if (channel_offset > 127) {
+        if (channel_offset > ITERATIONS) {
             channel_offset = 0;
         }
     }
@@ -282,7 +299,6 @@ int main(void) {
 
 #ifdef USE_NRF24L01
     uint16_t retries = 0;
-    bool is_connected = false;
     char* loading_points[] = {"", ".", "..", "..."};
     char str_buff[32] = {0};
 
@@ -298,33 +314,16 @@ int main(void) {
     }
 
     retries = 0;
-    while (!is_connected) {
-        while (!get_flag(NRF_RECEIVE)) {
-            nRF24_StopListening();
-            nRF24_SendData(init_payload, PLD_LEN);
-            nRF24_StartListening();
-            HAL_Delay(150);
-
-            SH1106_clear();
-            SH1106_printStr(3, (SCR_H / 2) - 12, "Mount not found", fnt7x10);
-            sprintf(str_buff, "Searching %s", loading_points[(retries / 5) % 4]);
-            SH1106_printStr(15, (3 * SCR_H / 4) - 12, str_buff, fnt7x10);
-            SH1106_flush();
-            retries++;
-        }
-        clear_flag(NRF_RECEIVE);
-
-        if (nRF24_GetData(recv_payload, &pld_len)) {
-            is_connected = true;
-        }
-
-        for (uint8_t i = 0; i < 3; i++) {
-            if (recv_payload[i] != ack_pld[i]) {
-                is_connected = false;
-            }
-        }
-    }
     nRF24_StopListening();
+    while (!nRF24_Talk(init_msg, NULL, nRF24_MODE_TX)) {
+        retries++;
+        SH1106_clear();
+        SH1106_printStr(3, (SCR_H / 2) - 12, "Mount not found", fnt7x10);
+        sprintf(str_buff, "Searching %s", loading_points[retries % 4]);
+        SH1106_printStr(15, (3 * SCR_H / 4) - 12, str_buff, fnt7x10);
+        SH1106_flush();
+        HAL_Delay(100);
+    }
 
 #endif
 
@@ -428,10 +427,8 @@ void nRF24_TX_ESB_setup(const uint8_t* addr) {
 
     // Do the initial configurations.
     nRF24_init(addr, EQM_RF_CHANNEL);
-    nRF24_SetAddr(nRF24_PIPE0, addr);
-    nRF24_SetOperationalMode(nRF24_MODE_TX);
+    nRF24_StopListening();
 }
-
 
 static void handle_list_menu_changes(uint8_t max_index, void* current_selection, void* current_head) {
     int8_t tmp_sel;
@@ -495,6 +492,11 @@ static void main_menu_select_handler(main_menu_selection_t selected) {
             screen.curr_screen = MENU_SCREEN;
             screen.kind.menu = TARGET_MENU;
             break;
+        case UPDT_HOME:
+            screen.curr_screen = MONITOR_SCREEN;
+            screen.kind.setting = NONE;
+            update_home_handler();
+            break;
         case EQM_MODE:
             screen.curr_screen = MENU_SCREEN;
             screen.kind.menu = EQM_MODE_MENU;
@@ -505,6 +507,17 @@ static void main_menu_select_handler(main_menu_selection_t selected) {
             screen.kind.setting = NONE;
             break;
     }
+}
+
+static void update_home_handler() {
+    nrf24_data_t out_msg;
+    nrf24_data_t in_msg;
+    transf_t t;
+    uint8_t pld_len;
+
+    nRF24_PrepareData("GET_DEC_RA_HOME", 15, REQUEST, &out_msg);
+    while (!nRF24_Talk(out_msg, &in_msg, nRF24_MODE_TX));
+    nRF24_RetrieveData(in_msg, &settings_values.RA);
 }
 
 static void target_menu_select_handler(target_t selected) {
@@ -520,12 +533,35 @@ static void target_menu_select_handler(target_t selected) {
 }
 
 static void mode_menu_select_handler(eqm_mode_t select) {
+    nrf24_data_t mode_set_msg;
 
     if (select > _EQM_MODES_AMOUNT) {
         return;
     }
 
     settings_values.mode = select;
+    switch (select) {
+
+        case MANUAL_MODE:
+            nRF24_PrepareData("MANUAL", 7, COMMAND, &mode_set_msg);
+            break;
+        case TRACKING_MODE:
+            nRF24_PrepareData("TRACK", 6, COMMAND, &mode_set_msg);
+            break;
+        case GOTO_MODE:
+            nRF24_PrepareData("GOTO", 5, COMMAND, &mode_set_msg);
+            break;
+        case OFF_MODE:
+            nRF24_PrepareData("RELEASE", 8, COMMAND, &mode_set_msg);
+            break;
+        default:
+            nRF24_PrepareData("NOP", 4, COMMAND, &mode_set_msg);
+            break;
+    }
+
+    while (!nRF24_Talk(mode_set_msg, NULL, nRF24_MODE_TX)) {
+        HAL_Delay(10);
+    }
 }
 
 void handle_nav_menu_select(uint8_t current_selection) {

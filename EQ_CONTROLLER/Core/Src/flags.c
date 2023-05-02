@@ -1,4 +1,4 @@
-#include "variables.h"
+#include "flags.h"
 
 static volatile bool boolVariables[IRQ_vars_amount];
 

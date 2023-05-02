@@ -24,7 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "rotary_events.h"
 #include "nrf24l01p.h"
-#include "variables.h"
+#include "flags.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
