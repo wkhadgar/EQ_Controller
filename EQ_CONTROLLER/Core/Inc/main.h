@@ -33,7 +33,6 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
 #include <stdint.h>
-#include "screen_monitor.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

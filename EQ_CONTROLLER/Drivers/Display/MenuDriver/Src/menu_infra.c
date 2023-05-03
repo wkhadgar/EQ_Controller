@@ -3,11 +3,12 @@
  */
 
 #include "menu_infra.h"
+#include "sh1106.h"
 
 void show_screen(navigator_t* navigator) {
-    navigator->current_screen->show_callback();
+	navigator->current_screen->show();
 }
 
-void print_str_content(content_t cnt, const Font_TypeDef* fnt) {
-    SH1106_printStr(cnt.pos.x, cnt.pos.y, cnt.data, fnt);
+void update_content(navigator_t* navigator, uint8_t index, void* value) {
+	navigator->current_screen->contents[index].data = value;
 }

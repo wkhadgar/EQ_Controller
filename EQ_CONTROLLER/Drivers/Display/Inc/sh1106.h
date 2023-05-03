@@ -1,10 +1,10 @@
 #ifndef __SH1106_H
 #define __SH1106_H
 
-#include "stm32f1xx_hal.h"
-#include "Fonts.h"
-#include "bitmaps.h"
 #include "i2c.h"
+#include "fonts.h"
+#include "bitmaps.h"
+#include "stm32f1xx_hal.h"
 
 // Use bit-banding to draw pixel
 //   0 - use logic operations to set pixel color
@@ -184,7 +184,7 @@ void SH1106_drawRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
 
 void SH1106_fillRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
 
-void SH1106_drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+void SH1106_drawLine(int16_t xo, int16_t yo, int16_t xf, int16_t yf);
 
 void SH1106_drawCircle(int16_t x_c, int16_t y_c, uint8_t radius);
 
@@ -193,28 +193,28 @@ void SH1106_drawEllipse(uint16_t x_, uint16_t y_, uint16_t Ra, uint16_t Rb);
 void SH1106_drawRoundRectFill(uint8_t fill_percentage, uint8_t x, uint8_t y, uint8_t w, uint8_t h);
 
 uint8_t SH1106_printChar(uint8_t x, uint8_t y, uint8_t ch,
-                         const Font_TypeDef *Font);
+                         const font_t *Font);
 
 uint16_t SH1106_printStr(uint8_t x, uint8_t y, const char *str,
-                         const Font_TypeDef *Font);
+                         const font_t *Font);
 
 uint16_t SH1106_printStrLF(uint8_t x, uint8_t y, const char *str,
-                           const Font_TypeDef *Font);
+                           const font_t *Font);
 
 uint8_t SH1106_printInt(uint8_t x, uint8_t y, int32_t num,
-                        const Font_TypeDef *Font);
+                        const font_t *Font);
 
 uint8_t SH1106_printIntU(uint8_t x, uint8_t y, uint32_t num,
-                         const Font_TypeDef *Font);
+                         const font_t *Font);
 
 uint8_t SH1106_printIntF(uint8_t x, uint8_t y, int32_t num, uint8_t decimals,
-                         const Font_TypeDef *Font);
+                         const font_t *Font);
 
 uint8_t SH1106_printIntLZ(uint8_t x, uint8_t y, int32_t num, uint8_t digits,
-                          const Font_TypeDef *Font);
+                          const font_t *Font);
 
 uint8_t SH1106_printHex(uint8_t x, uint8_t y, uint32_t num,
-                        const Font_TypeDef *Font);
+                        const font_t *Font);
 
 void SH1106_drawBitmap(uint8_t x, uint8_t y, uint8_t w, uint8_t h,
                        const uint8_t *pBMP);

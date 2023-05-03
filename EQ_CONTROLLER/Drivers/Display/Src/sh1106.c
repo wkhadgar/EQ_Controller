@@ -1,4 +1,3 @@
-#include "menu_infra.h"
 #include <sh1106.h>
 #include <string.h>
 
@@ -243,8 +242,8 @@ void SH1106_cleanInit(void) {
 	SH1106_setAllPixelsOn(0);
 	SH1106_clear();
 	SH1106_flush();
-
-    HAL_Delay(500);
+	
+	HAL_Delay(500);
 }
 
 // Horizontal scroll setup
@@ -608,21 +607,21 @@ void SH1106_fillRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
 
 // Draw line
 // input:
-//   x1,y1 - top left coordinates
-//   x2,y2 - bottom right coordinates
-void SH1106_drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
-	int16_t dx = x2 - x1;
-	int16_t dy = y2 - y1;
+//   xo,yo - top left coordinates
+//   xf,yf - bottom right coordinates
+void SH1106_drawLine(int16_t xo, int16_t yo, int16_t xf, int16_t yf) {
+	int16_t dx = xf - xo;
+	int16_t dy = yf - yo;
 	int16_t dx_sym = (dx > 0) ? 1 : -1;
 	int16_t dy_sym = (dy > 0) ? 1 : -1;
 	
 	if (dx == 0) {
-		SH1106_drawVLine(x1, y1, y2);
+		SH1106_drawVLine(xo, yo, yf);
 		
 		return;
 	}
 	if (dy == 0) {
-		SH1106_drawHLine(x1, x2, y1);
+		SH1106_drawHLine(xo, xf, yo);
 		
 		return;
 	}
@@ -635,30 +634,30 @@ void SH1106_drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
 	
 	if (dx >= dy) {
 		di = dy2 - dx;
-		while (x1 != x2) {
-			SH1106_pixel(x1, y1, SH1106_PixelMode);
-			x1 += dx_sym;
+		while (xo != xf) {
+			SH1106_pixel(xo, yo, SH1106_PixelMode);
+            xo += dx_sym;
 			if (di < 0) {
 				di += dy2;
 			} else {
 				di += dy2 - dx2;
-				y1 += dy_sym;
+                yo += dy_sym;
 			}
 		}
 	} else {
 		di = dx2 - dy;
-		while (y1 != y2) {
-			SH1106_pixel(x1, y1, SH1106_PixelMode);
-			y1 += dy_sym;
+		while (yo != yf) {
+			SH1106_pixel(xo, yo, SH1106_PixelMode);
+            yo += dy_sym;
 			if (di < 0) {
 				di += dx2;
 			} else {
 				di += dx2 - dy2;
-				x1 += dx_sym;
+                xo += dx_sym;
 			}
 		}
 	}
-	SH1106_pixel(x1, y1, SH1106_PixelMode);
+	SH1106_pixel(xo, yo, SH1106_PixelMode);
 }
 
 // Draw circle
@@ -804,7 +803,7 @@ void SH1106_drawRoundRectFill(uint8_t fill_percentage, uint8_t x, uint8_t y, uin
 //   Font - pointer to font
 // return: character width in pixels
 uint8_t SH1106_printChar(uint8_t x, uint8_t y, uint8_t ch,
-						 const Font_TypeDef* Font) {
+						 const font_t* Font) {
 	uint8_t p_x;
 	uint8_t p_y;
 	uint8_t tmpCh;
@@ -812,19 +811,19 @@ uint8_t SH1106_printChar(uint8_t x, uint8_t y, uint8_t ch,
 	const uint8_t* pCh;
 	
 	// If the specified character code is out of bounds should substitute the code of the "unknown" character
-	if (ch < Font->font_MinChar || ch > Font->font_MaxChar)
-		ch = Font->font_UnknownChar;
+	if (ch < Font->min_char || ch > Font->max_char)
+		ch = Font->unknown_char;
 	
 	// Pointer to the first byte of character in font data array
-	pCh = &Font->font_Data[(ch - Font->font_MinChar) * Font->font_BPC];
+	pCh = &Font->characters[(ch - Font->min_char) * Font->BPC];
 	
 	// Draw character
-	if (Font->font_Scan == FONT_V) {
+	if (Font->scan == FONT_V) {
 		// Vertical pixels order
-		if (Font->font_Height < 9) {
+		if (Font->height < 9) {
 			// Height is 8 pixels or less (one byte per column)
 			p_x = x;
-			while (p_x < x + Font->font_Width) {
+			while (p_x < x + Font->width) {
 				p_y = y;
 				tmpCh = *pCh++;
 				while (tmpCh) {
@@ -838,9 +837,9 @@ uint8_t SH1106_printChar(uint8_t x, uint8_t y, uint8_t ch,
 		} else {
 			// Height is more than 8 pixels (several bytes per column)
 			p_x = x;
-			while (p_x < x + Font->font_Width) {
+			while (p_x < x + Font->width) {
 				p_y = y;
-				while (p_y < y + Font->font_Height) {
+				while (p_y < y + Font->height) {
 					bL = 8;
 					tmpCh = *pCh++;
 					if (tmpCh) {
@@ -865,10 +864,10 @@ uint8_t SH1106_printChar(uint8_t x, uint8_t y, uint8_t ch,
 		}
 	} else {
 		// Horizontal pixels order
-		if (Font->font_Width < 9) {
+		if (Font->width < 9) {
 			// Width is 8 pixels or less (one byte per row)
 			p_y = y;
-			while (p_y < y + Font->font_Height) {
+			while (p_y < y + Font->height) {
 				p_x = x;
 				tmpCh = *pCh++;
 				while (tmpCh) {
@@ -882,9 +881,9 @@ uint8_t SH1106_printChar(uint8_t x, uint8_t y, uint8_t ch,
 		} else {
 			// Width is more than 8 pixels (several bytes per row)
 			p_y = y;
-			while (p_y < y + Font->font_Height) {
+			while (p_y < y + Font->height) {
 				p_x = x;
-				while (p_x < x + Font->font_Width) {
+				while (p_x < x + Font->width) {
 					bL = 8;
 					tmpCh = *pCh++;
 					if (tmpCh) {
@@ -909,7 +908,7 @@ uint8_t SH1106_printChar(uint8_t x, uint8_t y, uint8_t ch,
 		}
 	}
 	
-	return Font->font_Width + 1;
+	return Font->width + 1;
 }
 
 // Draw string
@@ -919,14 +918,14 @@ uint8_t SH1106_printChar(uint8_t x, uint8_t y, uint8_t ch,
 //   Font - pointer to font
 // return: string width in pixels
 uint16_t SH1106_printStr(uint8_t x, uint8_t y, const char* str,
-						 const Font_TypeDef* Font) {
+						 const font_t* Font) {
 	uint8_t p_x = x;
-	uint8_t eX = scr_width - Font->font_Width - 1;
-
-    if (str == NULL) {
-        return 0;
-    }
-
+	uint8_t eX = scr_width - Font->width - 1;
+	
+	if (str == NULL) {
+		return 0;
+	}
+	
 	while (*str) {
 		p_x += SH1106_printChar(p_x, y, *str++, Font);
 		if (p_x > eX)
@@ -943,16 +942,16 @@ uint16_t SH1106_printStr(uint8_t x, uint8_t y, const char* str,
 //   Font - pointer to font
 // return: string width in pixels
 uint16_t SH1106_printStrLF(uint8_t x, uint8_t y, const char* str,
-						   const Font_TypeDef* Font) {
+						   const font_t* Font) {
 	uint8_t strLen = 0;
 	
 	while (*str) {
 		SH1106_printChar(x, y, *str++, Font);
-		if (x < scr_width - Font->font_Width - 1) {
-			x += Font->font_Width + 1;
-		} else if (y < scr_height - Font->font_Height - 1) {
+		if (x < scr_width - Font->width - 1) {
+			x += Font->width + 1;
+		} else if (y < scr_height - Font->height - 1) {
 			x = 0;
-			y += Font->font_Height;
+			y += Font->height;
 		} else {
 			x = 0;
 			y = 0;
@@ -960,7 +959,7 @@ uint16_t SH1106_printStrLF(uint8_t x, uint8_t y, const char* str,
 		strLen++;
 	}
 	
-	return strLen * (Font->font_Width + 1);
+	return strLen * (Font->width + 1);
 }
 
 // Draw signed integer value
@@ -970,7 +969,7 @@ uint16_t SH1106_printStrLF(uint8_t x, uint8_t y, const char* str,
 //   Font - pointer to font
 // return: number width in pixels
 uint8_t SH1106_printInt(uint8_t x, uint8_t y, int32_t num,
-						const Font_TypeDef* Font) {
+						const font_t* Font) {
 	uint8_t str[11]; // 10 chars max for INT32_MIN..INT32_MAX (without sign)
 	uint8_t* pStr = str;
 	uint8_t p_x = x;
@@ -987,14 +986,14 @@ uint8_t SH1106_printInt(uint8_t x, uint8_t y, int32_t num,
 	do {
 		*pStr++ = (num % 10) + '0';
 	} while (num /= 10);
-	if (neg){
-        *pStr++ = '-';
-    }
+	if (neg) {
+		*pStr++ = '-';
+	}
 	
 	// Draw a number
-	while (*--pStr){
-        p_x += SH1106_printChar(p_x, y, *pStr, Font);
-    }
+	while (*--pStr) {
+		p_x += SH1106_printChar(p_x, y, *pStr, Font);
+	}
 	
 	return (p_x - x);
 }
@@ -1006,7 +1005,7 @@ uint8_t SH1106_printInt(uint8_t x, uint8_t y, int32_t num,
 //   Font - pointer to font
 // return: number width in pixels
 uint8_t SH1106_printIntU(uint8_t x, uint8_t y, uint32_t num,
-						 const Font_TypeDef* Font) {
+						 const font_t* Font) {
 	uint8_t str[11]; // 10 chars max for UINT32_MAX
 	uint8_t* pStr = str;
 	uint8_t p_x = x;
@@ -1034,7 +1033,7 @@ uint8_t SH1106_printIntU(uint8_t x, uint8_t y, uint32_t num,
 //   Font - pointer to font
 // return: number width in pixels
 uint8_t SH1106_printIntF(uint8_t x, uint8_t y, int32_t num, uint8_t decimals,
-						 const Font_TypeDef* Font) {
+						 const font_t* Font) {
 	uint8_t str[11]; // 10 chars max for INT32_MIN..INT32_MAX (without sign)
 	uint8_t* pStr = str;
 	uint8_t p_x = x;
@@ -1073,8 +1072,8 @@ uint8_t SH1106_printIntF(uint8_t x, uint8_t y, int32_t num, uint8_t decimals,
 		p_x += SH1106_printChar(p_x, y, *pStr, Font);
 		if (decimals && (--strLen == decimals)) {
 			// Draw decimal point
-			SH1106_drawRect(p_x, y + Font->font_Height - 2, p_x + 1,
-							y + Font->font_Height - 1);
+			SH1106_drawRect(p_x, y + Font->height - 2, p_x + 1,
+							y + Font->height - 1);
 			p_x += 3;
 		}
 	}
@@ -1090,7 +1089,7 @@ uint8_t SH1106_printIntF(uint8_t x, uint8_t y, int32_t num, uint8_t decimals,
 //   Font - pointer to font
 // return: number width in pixels
 uint8_t SH1106_printIntLZ(uint8_t x, uint8_t y, int32_t num, uint8_t digits,
-						  const Font_TypeDef* Font) {
+						  const font_t* Font) {
 	uint8_t str[11]; // 10 chars max for INT32_MIN..INT32_MAX (without sign)
 	uint8_t* pStr = str;
 	uint8_t p_x = x;
@@ -1133,7 +1132,7 @@ uint8_t SH1106_printIntLZ(uint8_t x, uint8_t y, int32_t num, uint8_t digits,
 //   Font - pointer to font
 // return: number width in pixels
 uint8_t SH1106_printHex(uint8_t x, uint8_t y, uint32_t num,
-						const Font_TypeDef* Font) {
+						const font_t* Font) {
 	uint8_t str[11]; // 10 chars max for UINT32_MAX
 	uint8_t* pStr = str;
 	uint8_t p_x = x;
