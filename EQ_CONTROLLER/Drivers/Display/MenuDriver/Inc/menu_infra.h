@@ -44,11 +44,11 @@
 /**
  * @brief Enumera os tipos de tela.
  */
-typedef enum screens {
+typedef enum screen_modes {
     MONITOR_SCREEN = 0, /**< Tipo de tela cuja finalidade é mostrar informações. */
     SETTING_SCREEN,     /**< Tipo de tela cuja finalidade é modificar um atributo. */
-    SUBMENU_SCREEN,     /**< Tipo de tela onde novas opções são navegáveis e selecionáveis. */
-} screens_t;
+    MENU_SCREEN,        /**< Tipo de tela onde novas opções são navegáveis e selecionáveis. */
+} screen_modes_t;
 
 /**
  * @brief Descreve um conteúdo.
@@ -75,38 +75,55 @@ typedef struct content {
 } content_t;
 
 /**
- * @brief Descreve a identificação de uma tela.
- */
-typedef struct screen_info {
-    const screens_t type;         /**< Tipo de tela atual. */
-    const uint8_t id;             /**< Identificador da tela atual. */
-    const uint8_t content_amount; /**< Quantidade de conteúdos na página. */
-} info_t;
-
-/**
  * @brief Descreve uma tela.
  */
 typedef struct screen_style {
-    const info_t details;
+    const struct screen_info {
+        const uint8_t id;             /**< Identificador da tela atual. */
+        const screen_modes_t type;    /**< Tipo de tela atual. */
+        const uint8_t content_amount; /**< Quantidade de conteúdos na página. */
+    } details;
 
-    void (*const show)(void);
+    void (*const post_draw)(void);
 
     content_t* contents;
 } screen_style_t;
+
+typedef enum screens {
+    SCR_MONITOR = 0,
+    SCR_MAIN_MENU,
+    SCR_DECLINATION,
+
+    SCR_AMOUNT,
+    SCR_NONE,
+} screens_t;
+
+typedef void (*setting_callback_t)(int8_t dir);
 
 /**
  * @brief Estrutura de controle do menu.
  */
 typedef struct navigator {
-    screen_style_t* current_screen;
-} navigator_t;
+    screens_t** flow_table;            /**< Tabela de fluxo de navegação. */
+    screen_style_t** screen_table;     /**< Tabela de telas por id. */
+    setting_callback_t* handler_table; /**< Tabela de callbacks por id. */
 
-/**
- * @brief Desenha a tela atual no display.
- *
- * @param navigator Navegador responsável pela lógica do menu.
- */
-void show_screen(navigator_t* navigator);
+    screen_style_t* current_screen; /**< Ponteiro para a tela atual. */
+    screens_t* screen_flow;         /**< Fluxo imediato de telas-alvo */
+
+    union control {
+        struct menu_ctrl {
+            content_t cursor_bmp; /**< Cursor para os menus. */
+
+            uint8_t head;      /**< Inicio atual do menu na tela. */
+            uint8_t selection; /**< Seleção atual do menu na tela. */
+        } menu;
+
+        setting_callback_t setting_handler;
+    } ctrl;
+
+
+} navigator_t;
 
 /**
  * @brief Imprime um conteúdo na tela.
@@ -122,6 +139,19 @@ inline void print_content(content_t cnt) {
 }
 
 /**
+ * @brief Imprime um conteúdo na tela.
+ *
+ * @param cnt Conteúdo a ser impresso.
+ */
+inline void print_content_rows(content_t cnt, uint8_t head_y) {
+    if (cnt.opt.is_bitmap) {
+        SH1106_drawBitmap(cnt.pos.x, cnt.pos.y - head_y, cnt.dim.width, cnt.dim.height, cnt.data);
+    } else {
+        SH1106_printStr(cnt.pos.x, cnt.pos.y - head_y, (const char*) cnt.data, cnt.opt.fnt);
+    }
+}
+
+/**
  * @brief Imprime um array de conteúdos na tela.
  *
  * @param[in] contents Conteúdos a serem impressos.
@@ -130,6 +160,18 @@ inline void print_content(content_t cnt) {
 inline void print_contents(content_t* contents, uint8_t amount) {
     for (uint8_t i = 0; i < amount; i++) {
         print_content(contents[i]);
+    }
+}
+
+/**
+ * @brief Imprime um array de conteúdos na tela.
+ *
+ * @param[in] contents Conteúdos a serem impressos.
+ * @param amount Número de conteúdos.
+ */
+inline void print_contents_rows(content_t* contents, uint8_t head_y, uint8_t amount) {
+    for (uint8_t i = 0; i < amount; i++) {
+        print_content_rows(contents[i], head_y);
     }
 }
 

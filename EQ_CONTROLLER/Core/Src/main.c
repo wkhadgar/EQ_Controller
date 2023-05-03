@@ -28,11 +28,13 @@
 #include "astro_targets.h"
 #include "flags.h"
 #include "math.h"
+#include "menu_nav.h"
 #include "nrf24l01p.h"
 #include "rotary_events.h"
 #include "sh1106.h"
 #include <memory.h>
 #include <stdio.h>
+#include "menu_flow.h"
 
 /* USER CODE END Includes */
 
@@ -53,19 +55,6 @@ typedef enum {
 } eqm_mode_t;
 
 typedef enum {
-    MENU_SCREEN = 0,
-    MONITOR__SCREEN,
-    SETTINGS__SCREEN,
-    _SCREEN_AMOUNT,
-} screen_t;
-
-typedef enum {
-    MAIN_MENU = 0,
-    TARGET_MENU,
-    EQM_MODE_MENU,
-} nav_menu_t;
-
-typedef enum {
     NONE = 0,
     DEC_SETTINGS,
     RA_SETTINGS,
@@ -75,18 +64,6 @@ typedef enum {
     _SETTINGS_AMOUNT,
 } settings_t;
 
-typedef enum {
-    MONITOR,
-    DECLINATION,
-    RIGHT_ASCENSION,
-    TGT_SELECTION,
-    UPDT_HOME,
-    CONTRAST,
-    CONTRAST_TIME,
-    HEMISPHERE,
-    EQM_MODE,
-    _MAIN_MENU_AMOUNT,
-} main_menu_selection_t;
 
 /* USER CODE END PTD */
 
@@ -115,17 +92,6 @@ typedef enum {
 
 uint32_t packets_lost = 0;// global counter of lost packets
 
-char* main_menu_strings[_MAIN_MENU_AMOUNT] = {
-        [MONITOR] = "Go to Monitor",
-        [DECLINATION] = "DEC",
-        [RIGHT_ASCENSION] = "RA",
-        [TGT_SELECTION] = "Target Selection",
-        [UPDT_HOME] = "Update Home",
-        [CONTRAST] = "Contrast",
-        [CONTRAST_TIME] = "Screen Light",
-        [HEMISPHERE] = "Hemisphere",
-        [EQM_MODE] = "Mode",
-};
 char* setting_strings[_SETTINGS_AMOUNT] = {
         [NONE] = "",
         [DEC_SETTINGS] = "Declination:",
@@ -184,7 +150,7 @@ struct {
         uint8_t raw;
     } kind;
 } screen = {
-        .curr_screen = MENU_SCREEN,
+        .curr_screen = MENU__SCREEN,
         .kind = {
                 .menu = MAIN_MENU,
         },
@@ -218,7 +184,7 @@ void show_target_menu();
 
 void show_mode_menu();
 
-void show_monitor();
+void monitor_draws();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -338,7 +304,7 @@ int main(void) {
         /* USER CODE BEGIN 3 */
         switch (screen.curr_screen) {
 
-            case MENU_SCREEN:
+            case MENU__SCREEN:
                 load_list_menu_changes();
                 switch (screen.kind.menu) {
 
@@ -358,7 +324,7 @@ int main(void) {
                 show_settings_adjust(screen.kind.setting);
                 break;
             case MONITOR__SCREEN:
-                show_monitor();
+                monitor_draws();
                 break;
             default:
                 break;
@@ -366,9 +332,9 @@ int main(void) {
 
         was_selected[screen.curr_screen] = rotary_peek_press();
 
-        if (was_selected[MENU_SCREEN]) {
+        if (was_selected[MENU__SCREEN]) {
             handle_nav_menu_select(menu_data.raw.selection);
-            was_selected[MENU_SCREEN] = false;
+            was_selected[MENU__SCREEN] = false;
         } else if (was_selected[MONITOR__SCREEN]) {
             handle_monitor_select();
             was_selected[MONITOR__SCREEN] = false;
@@ -488,7 +454,7 @@ static void main_menu_select_handler(main_menu_selection_t selected) {
             screen.kind.setting = HEMISPHERE_SETTINGS;
             break;
         case TGT_SELECTION:
-            screen.curr_screen = MENU_SCREEN;
+            screen.curr_screen = MENU__SCREEN;
             screen.kind.menu = TARGET_MENU;
             break;
         case UPDT_HOME:
@@ -497,7 +463,7 @@ static void main_menu_select_handler(main_menu_selection_t selected) {
             update_home_handler();
             break;
         case EQM_MODE:
-            screen.curr_screen = MENU_SCREEN;
+            screen.curr_screen = MENU__SCREEN;
             screen.kind.menu = EQM_MODE_MENU;
             break;
         case MONITOR:
@@ -593,7 +559,7 @@ void handle_nav_menu_select(uint8_t current_selection) {
 
 void handle_monitor_select(void) {
     if (rotary_pop_press()) {
-        screen.curr_screen = MENU_SCREEN;
+        screen.curr_screen = MENU__SCREEN;
         screen.kind.menu = MAIN_MENU;
     }
 }
@@ -617,7 +583,7 @@ void handle_settings_select(void) {
     }
 
     if (rotary_pop_press()) {
-        screen.curr_screen = MENU_SCREEN;
+        screen.curr_screen = MENU__SCREEN;
         screen.kind.menu = MAIN_MENU;
     }
 }
@@ -669,38 +635,6 @@ static void show_right_ascension(char* buffer, uint8_t x_offset, uint8_t y_offse
     sprintf(buffer, "%02dh%02dm%02ds", settings_values.RA.hours, settings_values.RA.minutes,
             settings_values.RA.seconds);
     SH1106_printStr(x_offset, y_offset, buffer, &fnt7x10);
-}
-
-static const uint8_t* mode_bitmaps[] = {
-        [MANUAL_MODE] = mode_manual,
-        [TRACKING_MODE] = mode_tracking,
-        [GOTO_MODE] = mode_go_to,
-        [OFF_MODE] = mode_off,
-};
-
-void show_main_menu() {
-    uint8_t str_sel = 0;
-    bool is_pressed = rotary_peek_press();
-
-    SH1106_clear();
-
-    for (uint8_t current_str_y = 0; current_str_y < MENU_SCREEN_ROWS; current_str_y++) {
-        if (str_sel + menu_data.main_menu.head == _MAIN_MENU_AMOUNT) {
-            break;
-        }
-        SH1106_printStr(4 + CUSTOM_CHAR_W, 2 + current_str_y * ROW_SPACE_PX,
-                        main_menu_strings[str_sel + menu_data.main_menu.head],
-                        &fnt5x7);
-        str_sel++;
-    }
-
-    handle_menu_list_arrow(is_pressed, &menu_data.main_menu.selection,
-                           &menu_data.main_menu.head);
-
-    SH1106_flush();
-    if (is_pressed) {
-        HAL_Delay(SELECTION_ARROW_DELAY);
-    }
 }
 
 void show_target_menu() {
