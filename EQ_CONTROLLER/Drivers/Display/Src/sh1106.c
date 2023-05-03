@@ -1,3 +1,4 @@
+#include "menu_infra.h"
 #include <sh1106.h>
 #include <string.h>
 
@@ -74,7 +75,6 @@ void SH1106_Init(void) {
 	SH1106_cmd(SH1106_CMD_DC_DC_SET);
 	SH1106_cmd(0x8B); // on
 	SH1106_cmd(0x32); // 8v
-	
 	
 	SH1106_cmd(SH1106_CMD_COM_INV);
 	

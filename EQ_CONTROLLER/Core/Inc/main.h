@@ -33,6 +33,7 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
 #include <stdint.h>
+#include "screen_monitor.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -76,7 +77,7 @@ void Error_Handler(void);
 #define NRF_IRQ_GPIO_Port GPIOB
 #define NRF_IRQ_EXTI_IRQn EXTI3_IRQn
 /* USER CODE BEGIN Private defines */
-#define USE_NRF24L01
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
