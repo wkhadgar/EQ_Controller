@@ -40,6 +40,7 @@
         },                                                   \
     }
 
+typedef void (*setting_callback_t)(int8_t dir);
 
 /**
  * @brief Enumera os tipos de tela.
@@ -47,8 +48,27 @@
 typedef enum screen_modes {
     MONITOR_SCREEN = 0, /**< Tipo de tela cuja finalidade é mostrar informações. */
     SETTING_SCREEN,     /**< Tipo de tela cuja finalidade é modificar um atributo. */
-    MENU_SCREEN,        /**< Tipo de tela onde novas opções são navegáveis e selecionáveis. */
+    OPTIONS_SCREEN,     /**< Tipo de tela onde novas opções são navegáveis e selecionáveis. */
 } screen_modes_t;
+
+/**
+ * @brief Enumera as telas.
+ */
+typedef enum screens {
+    SCR_M_HOME = 0,
+    SCR_O_MAIN_MENU,
+    SCR_S_DECLINATION,
+    SCR_S_RIGHT_ASCENSION,
+    SCR_O_TARGET_SELECTOR,
+    SCR_S_UPDATE_HOME,
+    SCR_S_CONTRAST_VAL,
+    SCR_S_CONTRAST_TIME,
+    SCR_S_HEMISPHERE,
+    SCR_O_EQM_MODE,
+
+    SCR_AMOUNT,
+    SCR_NONE,
+} screens_t;
 
 /**
  * @brief Descreve um conteúdo.
@@ -79,8 +99,8 @@ typedef struct content {
  */
 typedef struct screen_style {
     const struct screen_info {
-        const uint8_t id;             /**< Identificador da tela atual. */
         const screen_modes_t type;    /**< Tipo de tela atual. */
+        const screens_t id;           /** ID da tela atual. */
         const uint8_t content_amount; /**< Quantidade de conteúdos na página. */
     } details;
 
@@ -88,17 +108,6 @@ typedef struct screen_style {
 
     content_t* contents;
 } screen_style_t;
-
-typedef enum screens {
-    SCR_MONITOR = 0,
-    SCR_MAIN_MENU,
-    SCR_DECLINATION,
-
-    SCR_AMOUNT,
-    SCR_NONE,
-} screens_t;
-
-typedef void (*setting_callback_t)(int8_t dir);
 
 /**
  * @brief Estrutura de controle do menu.

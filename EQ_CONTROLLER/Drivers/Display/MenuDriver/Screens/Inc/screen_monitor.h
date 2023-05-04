@@ -26,7 +26,7 @@ extern const uint8_t* mode_bitmaps[];
 
 static screen_style_t monitor_screen = {
         .details = {
-                .id = SCR_MONITOR,
+                .id = SCR_M_HOME,
                 .type = MONITOR_SCREEN,
                 .content_amount = MONITOR_CONTENTS_AMOUNT,
         },

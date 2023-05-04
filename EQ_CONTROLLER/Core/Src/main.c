@@ -28,13 +28,13 @@
 #include "astro_targets.h"
 #include "flags.h"
 #include "math.h"
-#include "menu_nav.h"
+#include "menu_drawer.h"
+#include "menu_flow.h"
 #include "nrf24l01p.h"
 #include "rotary_events.h"
 #include "sh1106.h"
 #include <memory.h>
 #include <stdio.h>
-#include "menu_flow.h"
 
 /* USER CODE END Includes */
 
@@ -116,46 +116,6 @@ struct {
     eqm_mode_t mode;
 } settings_values;
 
-struct {
-
-    uint8_t size;
-    union {
-        struct {
-            uint8_t head;
-            uint8_t selection;
-        } raw;
-        struct {
-            main_menu_selection_t head;
-            main_menu_selection_t selection;
-        } main_menu;
-        struct {
-            target_t head;
-            target_t selection;
-
-        } target_menu;
-        struct {
-            eqm_mode_t head;
-            eqm_mode_t selection;
-        } mode_menu;
-    };
-} menu_data = {
-        .size = _MAIN_MENU_AMOUNT,
-};
-
-struct {
-    screen_t curr_screen;
-    union {
-        nav_menu_t menu;
-        settings_t setting;
-        uint8_t raw;
-    } kind;
-} screen = {
-        .curr_screen = MENU__SCREEN,
-        .kind = {
-                .menu = MAIN_MENU,
-        },
-};
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -184,7 +144,7 @@ void show_target_menu();
 
 void show_mode_menu();
 
-void monitor_draws();
+void show_monitor();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -225,8 +185,6 @@ int main(void) {
     MX_I2C2_Init();
     MX_SPI2_Init();
     /* USER CODE BEGIN 2 */
-
-    bool was_selected[_SCREEN_AMOUNT] = {false};
     static const uint8_t nRF24_ADDR[] = "EQM0";
 
     nrf24_data_t recv_data = {0};
@@ -243,11 +201,8 @@ int main(void) {
     astro_targets_init();
     nRF24_TX_ESB_setup(nRF24_ADDR);
     SH1106_cleanInit();
-    //SH1106_drawBitmapFullscreen(eqmount_logo);
-    SH1106_drawBitmapFullscreen(tury_hmi);
+    SH1106_drawBitmapFullscreen(eqmount_logo);
     SH1106_flush();
-    while (1)
-        ; /** Test screen only*/
     HAL_Delay(2000);
 
 #if TEST_CARRIER == 1
@@ -302,46 +257,48 @@ int main(void) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        switch (screen.curr_screen) {
 
-            case MENU__SCREEN:
-                load_list_menu_changes();
-                switch (screen.kind.menu) {
-
-                    case MAIN_MENU:
-                        show_main_menu();
-                        break;
-                    case TARGET_MENU:
-                        show_target_menu();
-                        break;
-                    case EQM_MODE_MENU:
-                        show_mode_menu();
-                        break;
-                }
-                break;
-            case SETTINGS__SCREEN:
-                load_settings_changes();
-                show_settings_adjust(screen.kind.setting);
-                break;
-            case MONITOR__SCREEN:
-                monitor_draws();
-                break;
-            default:
-                break;
-        }
-
-        was_selected[screen.curr_screen] = rotary_peek_press();
-
-        if (was_selected[MENU__SCREEN]) {
-            handle_nav_menu_select(menu_data.raw.selection);
-            was_selected[MENU__SCREEN] = false;
-        } else if (was_selected[MONITOR__SCREEN]) {
-            handle_monitor_select();
-            was_selected[MONITOR__SCREEN] = false;
-        } else if (was_selected[SETTINGS__SCREEN]) {
-            handle_settings_select();
-            was_selected[SETTINGS__SCREEN] = false;
-        }
+        /**        switch (screen.curr_screen) {
+        //
+        //            case MENU__SCREEN:
+        //                load_list_menu_changes();
+        //                switch (screen.kind.menu) {
+        //
+        //                    case MAIN_MENU:
+        //                        show_main_menu();
+        //                        break;
+        //                    case TARGET_MENU:
+        //                        show_target_menu();
+        //                        break;
+        //                    case EQM_MODE_MENU:
+        //                        show_mode_menu();
+        //                        break;
+        //                }
+        //                break;
+        //            case SETTINGS__SCREEN:
+        //                load_settings_changes();
+        //                show_settings_adjust(screen.kind.setting);
+        //                break;
+        //            case MONITOR__SCREEN:
+        //                show_monitor();
+        //                break;
+        //            default:
+        //                break;
+        //        }
+        //
+        //        was_selected[screen.curr_screen] = rotary_peek_press();
+        //
+        //        if (was_selected[MENU__SCREEN]) {
+        //            handle_nav_menu_select(menu_data.raw.selection);
+        //            was_selected[MENU__SCREEN] = false;
+        //        } else if (was_selected[MONITOR__SCREEN]) {
+        //            handle_monitor_select();
+        //            was_selected[MONITOR__SCREEN] = false;
+        //        } else if (was_selected[SETTINGS__SCREEN]) {
+        //            handle_settings_select();
+        //            was_selected[SETTINGS__SCREEN] = false;
+        //        }
+         */
     }
     /* USER CODE END 3 */
 }
@@ -414,66 +371,6 @@ static void handle_list_menu_changes(uint8_t max_index, void* current_selection,
     }
 }
 
-static void
-handle_settings_menu_changes(void* settings_value, int32_t min_value, int32_t max_value, uint8_t decrement) {
-    int32_t tmp_val;
-
-    tmp_val = *(int32_t*) settings_value;
-    tmp_val += rotary_pop_dir() == CCW ? -decrement : decrement * 10;
-    if (tmp_val > max_value) {
-        tmp_val = max_value;
-    } else if (tmp_val < min_value) {
-        tmp_val = min_value;
-    }
-    *(int32_t*) settings_value = tmp_val;
-}
-
-static void handle_menu_list_arrow(bool is_pressed, void* current_selection, void* current_head) {
-
-    SH1106_drawBitmap(2 + (is_pressed * 4),
-                      2 + (((*(uint8_t*) current_selection) - (*(uint8_t*) current_head)) * ROW_SPACE_PX),
-                      CUSTOM_CHAR_W,
-                      CUSTOM_CHAR_H, arrow);
-}
-
-static void main_menu_select_handler(main_menu_selection_t selected) {
-    switch (selected) {
-        case DECLINATION:
-            screen.kind.setting = DEC_SETTINGS;
-            break;
-        case RIGHT_ASCENSION:
-            screen.kind.setting = RA_SETTINGS;
-            break;
-        case CONTRAST:
-            screen.kind.setting = CONTRAST_SETTINGS;
-            break;
-        case CONTRAST_TIME:
-            screen.kind.setting = CONTRAST_TIME_SETTINGS;
-            break;
-        case HEMISPHERE:
-            screen.kind.setting = HEMISPHERE_SETTINGS;
-            break;
-        case TGT_SELECTION:
-            screen.curr_screen = MENU__SCREEN;
-            screen.kind.menu = TARGET_MENU;
-            break;
-        case UPDT_HOME:
-            screen.curr_screen = MONITOR__SCREEN;
-            screen.kind.setting = NONE;
-            update_home_handler();
-            break;
-        case EQM_MODE:
-            screen.curr_screen = MENU__SCREEN;
-            screen.kind.menu = EQM_MODE_MENU;
-            break;
-        case MONITOR:
-        default:
-            screen.curr_screen = MONITOR__SCREEN;
-            screen.kind.setting = NONE;
-            break;
-    }
-}
-
 static void update_home_handler() {
     nrf24_data_t out_msg;
     nrf24_data_t in_msg;
@@ -530,6 +427,7 @@ static void mode_menu_select_handler(eqm_mode_t select) {
     }
 }
 
+/*
 void handle_nav_menu_select(uint8_t current_selection) {
     menu_data.raw.selection = 0;
     menu_data.raw.head = 0;
@@ -814,6 +712,8 @@ void load_settings_changes(void) {
         }
     }
 }
+
+*/
 
 /* USER CODE END 4 */
 

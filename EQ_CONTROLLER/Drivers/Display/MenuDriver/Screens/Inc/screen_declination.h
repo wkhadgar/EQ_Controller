@@ -23,7 +23,7 @@ extern content_t dec_cnts[];
 
 static screen_style_t declination_screen = {
         .details = {
-                .id = SCR_DECLINATION,
+                .id = SCR_S_DECLINATION,
                 .type = SETTING_SCREEN,
                 .content_amount = DEC_CONTENTS_AMOUNT,
         },

@@ -25,8 +25,8 @@ extern content_t main_menu_cnts[];
 
 static screen_style_t main_menu_screen = {
         .details = {
-                .id = SCR_MAIN_MENU,
-                .type = MENU_SCREEN,
+                .id = SCR_O_MAIN_MENU,
+                .type = OPTIONS_SCREEN,
                 .content_amount = MAIN_MENU_CONTENTS_AMOUNT,
         },
         .contents = main_menu_cnts,

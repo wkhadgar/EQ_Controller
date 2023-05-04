@@ -12,7 +12,7 @@ void update_screen(navigator_t* navigator) {
         case SETTING_SCREEN:
             print_contents(navigator->current_screen->contents, navigator->current_screen->details.content_amount);
             break;
-        case MENU_SCREEN:
+        case OPTIONS_SCREEN:
             if (navigator->ctrl.menu.head + MENU_ROWS >= navigator->current_screen->details.content_amount) {
                 print_contents_rows(navigator->current_screen->contents,
                                     navigator->current_screen->contents[navigator->ctrl.menu.head].pos.y,
