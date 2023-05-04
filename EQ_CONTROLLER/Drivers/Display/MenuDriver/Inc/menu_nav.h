@@ -30,7 +30,7 @@ void update_selection(navigator_t* navigator, int8_t direction);
  * @param[in,out] navigator Referência para o navegador atual.
  * @param direction Direção da navegação.
  */
-void update_setting(navigator_t* navigator, int8_t dir);
+void update_setting(navigator_t* navigator, int8_t direction, eqm_settings_t* setting);
 
 /**
  * @brief Configura um callback de config.
@@ -47,7 +47,7 @@ inline void update_setting_callback(navigator_t* navigator) {
  * @param[in,out] navigator Navegador a ser configurado.
  */
 inline void update_screen_targets(navigator_t* navigator) {
-    navigator->screen_flow = navigator->flow_table[navigator->current_screen->details.id];
+    navigator->next_screens = navigator->screen_flow[navigator->current_screen->details.id].flow;
 }
 
 /**

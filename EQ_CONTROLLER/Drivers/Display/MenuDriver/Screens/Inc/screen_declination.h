@@ -17,7 +17,7 @@ typedef enum __attribute__((packed)) dec_contents {
 
 void dec_draws(void);
 
-void declination_handler(int8_t dir);
+void declination_handler(int8_t dir, eqm_settings_t* dec_setting);
 
 extern content_t dec_cnts[];
 

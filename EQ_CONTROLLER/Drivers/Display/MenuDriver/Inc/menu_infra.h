@@ -5,8 +5,10 @@
 #ifndef DEBUG_MENU_INFRA_H
 #define DEBUG_MENU_INFRA_H
 
+#include "eqm_settings.h"
 #include "fonts.h"
 #include "sh1106.h"
+#include <stdio.h>
 
 #define STR_CONTENT_INIT(_data, _x, _y, _is_visible, _fnt) \
     {                                                      \
@@ -40,7 +42,7 @@
         },                                                   \
     }
 
-typedef void (*setting_callback_t)(int8_t dir);
+typedef void (*setting_callback_t)(int8_t dir, eqm_settings_t* setting);
 
 /**
  * @brief Enumera os tipos de tela.
@@ -109,20 +111,25 @@ typedef struct screen_style {
     content_t* contents;
 } screen_style_t;
 
+typedef struct screen_flow {
+    screen_style_t* screen;
+    screens_t* flow;
+} screen_flow_t;
+
 /**
  * @brief Estrutura de controle do menu.
  */
 typedef struct navigator {
-    screens_t** flow_table;            /**< Tabela de fluxo de navegação. */
-    screen_style_t** screen_table;     /**< Tabela de telas por id. */
+    screen_flow_t* screen_flow; /**< Tabela de fluxo de navegação. */
+
     setting_callback_t* handler_table; /**< Tabela de callbacks por id. */
 
     screen_style_t* current_screen; /**< Ponteiro para a tela atual. */
-    screens_t* screen_flow;         /**< Fluxo imediato de telas-alvo */
+    screens_t* next_screens;        /**< Fluxo imediato de telas-alvo */
 
     union control {
         struct menu_ctrl {
-            content_t cursor_bmp; /**< Cursor para os menus. */
+            content_t cursor_cnt; /**< Cursor para os menus. */
 
             uint8_t head;      /**< Inicio atual do menu na tela. */
             uint8_t selection; /**< Seleção atual do menu na tela. */

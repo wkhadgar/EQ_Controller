@@ -21,6 +21,8 @@ typedef enum __attribute__((packed)) main_menu_contents {
     MAIN_MENU_CONTENTS_AMOUNT,
 } main_menu_contents_t;
 
+extern content_t main_menu_arrow;
+
 extern content_t main_menu_cnts[];
 
 static screen_style_t main_menu_screen = {

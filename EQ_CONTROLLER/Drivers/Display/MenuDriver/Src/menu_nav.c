@@ -8,10 +8,10 @@ void handle_press(navigator_t* navigator) {
     switch (navigator->current_screen->details.type) {
         case MONITOR_SCREEN:
         case SETTING_SCREEN:
-            navigator->current_screen = navigator->screen_table[navigator->screen_flow[0]];
+            navigator->current_screen = navigator->screen_flow[navigator->next_screens[0]].screen;
             break;
         case OPTIONS_SCREEN:
-            navigator->current_screen = navigator->screen_table[navigator->screen_flow[navigator->ctrl.menu.selection]];
+            navigator->current_screen = navigator->screen_flow[navigator->next_screens[navigator->ctrl.menu.selection]].screen;
             if (navigator->current_screen->details.type == SETTING_SCREEN) {
                 update_setting_callback(navigator);
             }
@@ -37,8 +37,8 @@ void update_selection(navigator_t* navigator, int8_t direction) {
     navigator->ctrl.menu.selection = (uint8_t) new_selection;
 }
 
-void update_setting(navigator_t* navigator, int8_t dir) {
+void update_setting(navigator_t* navigator, int8_t direction, eqm_settings_t* setting) {
     if (navigator->ctrl.setting_handler != NULL) {
-        navigator->ctrl.setting_handler(dir);
+        navigator->ctrl.setting_handler(direction, setting);
     }
 }

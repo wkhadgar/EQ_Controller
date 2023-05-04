@@ -3,8 +3,9 @@
 //
 
 #include "nrf24l01p.h"
-#include "spi.h"
 #include "flags.h"
+#include "spi.h"
+#include <string.h>
 
 #define NRF_CS_GPIO NRF_CS_GPIO_Port
 #define NRF_CS_PIN NRF_CS_Pin
@@ -671,9 +672,8 @@ void nRF24_StartCarrier(output_power_t pwr, uint8_t channel) {
     if (nRF24.info.is_p_variant) {
         nRF24_write_register(nRF24_REG_EN_AA, 0x00);
         nRF24_SetAutoRetr(0, 0);
-        for (uint8_t i = 0; i < PLD_LEN; i++) {
-            dummy.data[i] = 0xFF;
-        }
+        memset(dummy.data, 0xFF, PLD_LEN - 3);
+
 
         nRF24_write_multi_register(nRF24_REG_TX_ADDR, dummy.data, 5);
         nRF24_FlushTX();

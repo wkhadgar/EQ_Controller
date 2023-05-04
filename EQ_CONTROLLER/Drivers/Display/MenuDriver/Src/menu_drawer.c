@@ -23,8 +23,8 @@ void update_screen(navigator_t* navigator) {
                                     MENU_ROWS);
             }
 
-            navigator->ctrl.menu.cursor_bmp.pos.y = (navigator->ctrl.menu.head - navigator->ctrl.menu.selection) * Y_ROW_PAD;
-            print_content(navigator->ctrl.menu.cursor_bmp);
+            navigator->ctrl.menu.cursor_cnt.pos.y = (navigator->ctrl.menu.head - navigator->ctrl.menu.selection) * Y_ROW_PAD;
+            print_content(navigator->ctrl.menu.cursor_cnt);
             break;
     }
 

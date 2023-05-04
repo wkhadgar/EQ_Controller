@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "astro_targets.h"
+#include "eqm_settings.h"
 #include "flags.h"
 #include "math.h"
 #include "menu_drawer.h"
@@ -40,30 +40,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
-typedef enum {
-    NORTH = 0,
-    SOUTH,
-} hemisphere_t;
-
-typedef enum {
-    MANUAL_MODE = 0,
-    TRACKING_MODE,
-    GOTO_MODE,
-    OFF_MODE,
-    _EQM_MODES_AMOUNT,
-} eqm_mode_t;
-
-typedef enum {
-    NONE = 0,
-    DEC_SETTINGS,
-    RA_SETTINGS,
-    CONTRAST_SETTINGS,
-    CONTRAST_TIME_SETTINGS,
-    HEMISPHERE_SETTINGS,
-    _SETTINGS_AMOUNT,
-} settings_t;
-
 
 /* USER CODE END PTD */
 
@@ -92,29 +68,11 @@ typedef enum {
 
 uint32_t packets_lost = 0;// global counter of lost packets
 
-char* setting_strings[_SETTINGS_AMOUNT] = {
-        [NONE] = "",
-        [DEC_SETTINGS] = "Declination:",
-        [RA_SETTINGS] = "Right Ascension:",
-        [CONTRAST_SETTINGS] = "Adjust the contrast:",
-        [CONTRAST_TIME_SETTINGS] = "Screen timeout:",
-        [HEMISPHERE_SETTINGS] = "Choose the hemisphere:",
-};
-
-char* mode_menu_strings[_EQM_MODES_AMOUNT] = {
+char* mode_menu_strings[EQM_MODES_AMOUNT] = {
         [MANUAL_MODE] = "Manual Mode",
         [TRACKING_MODE] = "Start Tracking",
         [GOTO_MODE] = "Go to Target",
         [OFF_MODE] = "Free Movement"};
-
-struct {
-    angle_t DEC;
-    time__t RA;
-    uint8_t screen_contrast;      /**< relative brightness */
-    uint8_t screen_contrast_time; /**< time to auto reduce the brightness, in seconds */
-    hemisphere_t hemisphere;      /**< at telescope location */
-    eqm_mode_t mode;
-} settings_values;
 
 /* USER CODE END PV */
 
@@ -135,8 +93,6 @@ void handle_nav_menu_select(uint8_t current_selection);
 void handle_monitor_select(void);
 
 void handle_settings_select(void);
-
-void show_settings_adjust(settings_t setting);
 
 void show_main_menu();
 
@@ -160,6 +116,30 @@ static void update_home_handler();
   */
 int main(void) {
     /* USER CODE BEGIN 1 */
+
+    content_t arrow_cursor = {
+            .data = arrow,
+            .dim = {28, 28},
+            .pos = {2, 2},
+            .opt = {
+                    .fnt = NULL,
+                    .is_visible = true,
+                    .is_bitmap = true,
+            },
+    };
+
+    navigator_t navigator = {
+            .current_screen = &monitor_screen,
+            .next_screens = monitor_flow_screens,
+            .handler_table = settings_handlers_table,
+            .ctrl = {
+                    .menu = {
+                            .cursor_cnt = arrow_cursor,
+                            .head = 0,
+                            .selection = 0,
+                    },
+            },
+    };
 
     /* USER CODE END 1 */
 
@@ -185,25 +165,16 @@ int main(void) {
     MX_I2C2_Init();
     MX_SPI2_Init();
     /* USER CODE BEGIN 2 */
-    static const uint8_t nRF24_ADDR[] = "EQM0";
 
-    nrf24_data_t recv_data = {0};
-
-    const nrf24_data_t init_msg = {
-            .kind = COMMAND,
-            .size = {
-                    .data = 7,
-                    .payload = PLD_LEN,
-            },
-            .data = "Connect",
-    };
 
     astro_targets_init();
-    nRF24_TX_ESB_setup(nRF24_ADDR);
     SH1106_cleanInit();
     SH1106_drawBitmapFullscreen(eqmount_logo);
     SH1106_flush();
     HAL_Delay(2000);
+
+
+#ifdef USE_NRF24L01
 
 #if TEST_CARRIER == 1
     uint16_t channel_offset = 0;
@@ -219,8 +190,23 @@ int main(void) {
     }
 #endif
 
-#ifdef USE_NRF24L01
+    static const uint8_t nRF24_ADDR[] = "EQM0";
+
+    nrf24_data_t recv_data = {0};
+
+    const nrf24_data_t init_msg = {
+            .kind = COMMAND,
+            .size = {
+                    .data = 7,
+                    .payload = PLD_LEN,
+            },
+            .data = "Connect",
+    };
+
+    nRF24_TX_ESB_setup(nRF24_ADDR);
+
     uint16_t retries = 0;
+
     char* loading_points[] = {"", ".", "..", "..."};
     char str_buff[32] = {0};
 
@@ -257,48 +243,6 @@ int main(void) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-
-        /**        switch (screen.curr_screen) {
-        //
-        //            case MENU__SCREEN:
-        //                load_list_menu_changes();
-        //                switch (screen.kind.menu) {
-        //
-        //                    case MAIN_MENU:
-        //                        show_main_menu();
-        //                        break;
-        //                    case TARGET_MENU:
-        //                        show_target_menu();
-        //                        break;
-        //                    case EQM_MODE_MENU:
-        //                        show_mode_menu();
-        //                        break;
-        //                }
-        //                break;
-        //            case SETTINGS__SCREEN:
-        //                load_settings_changes();
-        //                show_settings_adjust(screen.kind.setting);
-        //                break;
-        //            case MONITOR__SCREEN:
-        //                show_monitor();
-        //                break;
-        //            default:
-        //                break;
-        //        }
-        //
-        //        was_selected[screen.curr_screen] = rotary_peek_press();
-        //
-        //        if (was_selected[MENU__SCREEN]) {
-        //            handle_nav_menu_select(menu_data.raw.selection);
-        //            was_selected[MENU__SCREEN] = false;
-        //        } else if (was_selected[MONITOR__SCREEN]) {
-        //            handle_monitor_select();
-        //            was_selected[MONITOR__SCREEN] = false;
-        //        } else if (was_selected[SETTINGS__SCREEN]) {
-        //            handle_settings_select();
-        //            was_selected[SETTINGS__SCREEN] = false;
-        //        }
-         */
     }
     /* USER CODE END 3 */
 }
@@ -371,121 +315,63 @@ static void handle_list_menu_changes(uint8_t max_index, void* current_selection,
     }
 }
 
-static void update_home_handler() {
-    nrf24_data_t out_msg;
-    nrf24_data_t in_msg;
-    transf_t t;
-    uint8_t pld_len;
+//static void update_home_handler() {
+//    nrf24_data_t out_msg;
+//    nrf24_data_t in_msg;
+//    transf_t t;
+//    uint8_t pld_len;
+//
+//    nRF24_PrepareData("GET_DEC_RA_HOME", 15, REQUEST, &out_msg);
+//    while (!nRF24_Talk(out_msg, &in_msg, nRF24_MODE_TX))
+//        ;
+//    nRF24_RetrieveData(in_msg, &settings_values.RA);
+//}
 
-    nRF24_PrepareData("GET_DEC_RA_HOME", 15, REQUEST, &out_msg);
-    while (!nRF24_Talk(out_msg, &in_msg, nRF24_MODE_TX))
-        ;
-    nRF24_RetrieveData(in_msg, &settings_values.RA);
-}
+//static void target_menu_select_handler(target_t selected) {
+//    astro_target_t tgt;
+//
+//    if (selected > _TARGET_AMOUNT) {
+//        return;
+//    }
+//
+//    tgt = astro_target_get(selected);
+//    settings_values.RA = tgt.position.right_ascension;
+//    settings_values.DEC = tgt.position.declination;
+//}
 
-static void target_menu_select_handler(target_t selected) {
-    astro_target_t tgt;
-
-    if (selected > _TARGET_AMOUNT) {
-        return;
-    }
-
-    tgt = astro_target_get(selected);
-    settings_values.RA = tgt.position.right_ascension;
-    settings_values.DEC = tgt.position.declination;
-}
-
-static void mode_menu_select_handler(eqm_mode_t select) {
-    nrf24_data_t mode_set_msg;
-
-    if (select > _EQM_MODES_AMOUNT) {
-        return;
-    }
-
-    settings_values.mode = select;
-    switch (select) {
-
-        case MANUAL_MODE:
-            nRF24_PrepareData("MANUAL", 7, COMMAND, &mode_set_msg);
-            break;
-        case TRACKING_MODE:
-            nRF24_PrepareData("TRACK", 6, COMMAND, &mode_set_msg);
-            break;
-        case GOTO_MODE:
-            nRF24_PrepareData("GOTO", 5, COMMAND, &mode_set_msg);
-            break;
-        case OFF_MODE:
-            nRF24_PrepareData("RELEASE", 8, COMMAND, &mode_set_msg);
-            break;
-        default:
-            nRF24_PrepareData("NOP", 4, COMMAND, &mode_set_msg);
-            break;
-    }
-
-    while (!nRF24_Talk(mode_set_msg, NULL, nRF24_MODE_TX)) {
-        HAL_Delay(10);
-    }
-}
+//static void mode_menu_select_handler(settings_t* settings, eqm_mode_t select) {
+//    nrf24_data_t mode_set_msg;
+//
+//    if (select > EQM_MODES_AMOUNT) {
+//        return;
+//    }
+//
+//    settings.mode = select;
+//    switch (select) {
+//
+//        case MANUAL_MODE:
+//            nRF24_PrepareData("MANUAL", 7, COMMAND, &mode_set_msg);
+//            break;
+//        case TRACKING_MODE:
+//            nRF24_PrepareData("TRACK", 6, COMMAND, &mode_set_msg);
+//            break;
+//        case GOTO_MODE:
+//            nRF24_PrepareData("GOTO", 5, COMMAND, &mode_set_msg);
+//            break;
+//        case OFF_MODE:
+//            nRF24_PrepareData("RELEASE", 8, COMMAND, &mode_set_msg);
+//            break;
+//        default:
+//            nRF24_PrepareData("NOP", 4, COMMAND, &mode_set_msg);
+//            break;
+//    }
+//
+//    while (!nRF24_Talk(mode_set_msg, NULL, nRF24_MODE_TX)) {
+//        HAL_Delay(10);
+//    }
+//}
 
 /*
-void handle_nav_menu_select(uint8_t current_selection) {
-    menu_data.raw.selection = 0;
-    menu_data.raw.head = 0;
-
-    switch (screen.kind.menu) {
-
-        case MAIN_MENU:
-            screen.curr_screen = SETTINGS__SCREEN;
-            main_menu_select_handler((main_menu_selection_t) current_selection);
-            break;
-        case TARGET_MENU:
-            screen.curr_screen = MONITOR__SCREEN;
-            screen.kind.setting = NONE;
-            target_menu_select_handler((target_t) current_selection);
-            break;
-        case EQM_MODE_MENU:
-            screen.curr_screen = MONITOR__SCREEN;
-            screen.kind.setting = NONE;
-            mode_menu_select_handler((eqm_mode_t) current_selection);
-            break;
-        default:
-            break;
-    }
-
-    rotary_pop_press();
-}
-
-void handle_monitor_select(void) {
-    if (rotary_pop_press()) {
-        screen.curr_screen = MENU__SCREEN;
-        screen.kind.menu = MAIN_MENU;
-    }
-}
-
-void handle_settings_select(void) {
-    switch (screen.kind.setting) {
-        //TODO
-        case DEC_SETTINGS:
-            break;
-        case RA_SETTINGS:
-            break;
-        case CONTRAST_SETTINGS:
-            break;
-        case CONTRAST_TIME_SETTINGS:
-            break;
-        case HEMISPHERE_SETTINGS:
-            break;
-        case NONE:
-        default:
-            break;
-    }
-
-    if (rotary_pop_press()) {
-        screen.curr_screen = MENU__SCREEN;
-        screen.kind.menu = MAIN_MENU;
-    }
-}
-
 void load_list_menu_changes(void) {
     uint8_t menu_size = 0;
     uint8_t* menu_selection = 0;
@@ -526,13 +412,6 @@ static void show_declination(char* buffer, uint8_t x_offset, uint8_t y_offset) {
     x_shift += SH1106_printStr(x_shift, y_offset - 3, "o", &fnt7x10);
     sprintf(buffer, "%02d'%02d\"", settings_values.DEC.arc_minutes, settings_values.DEC.arc_seconds);
     SH1106_printStr(x_shift + 2, y_offset, buffer, &fnt7x10);
-}
-
-static void show_right_ascension(char* buffer, uint8_t x_offset, uint8_t y_offset) {
-
-    sprintf(buffer, "%02dh%02dm%02ds", settings_values.RA.hours, settings_values.RA.minutes,
-            settings_values.RA.seconds);
-    SH1106_printStr(x_offset, y_offset, buffer, &fnt7x10);
 }
 
 void show_target_menu() {
@@ -607,16 +486,9 @@ void show_settings_adjust(settings_t setting) {
 
         case DEC_SETTINGS:
             show_declination(buffer, X_OFFSET, Y_OFFSET - 10);
-
-            SH1106_drawCircle(CENTER_X, CENTER_Y, RADIUS);
-            curr_cos = cos(dec_in_radians);
-            curr_sin = sin(dec_in_radians);
-            SH1106_drawLine(CENTER_X + (curr_cos * INNER_RADIUS), CENTER_Y + (curr_sin * INNER_RADIUS),
-                            CENTER_X + (curr_cos * OUTER_RADIUS), CENTER_Y + (curr_sin * OUTER_RADIUS));
             break;
         case RA_SETTINGS:
             show_right_ascension(buffer, X_OFFSET + 6, Y_OFFSET - 10);
-            SH1106_drawCircle(CENTER_X, CENTER_Y, RADIUS);//TODO: colocar indicador de visibilidade
             break;
         case CONTRAST_SETTINGS:
             sprintf(buffer, "%d%%", settings_values.screen_contrast);
