@@ -12,6 +12,8 @@
 #define Y_ROW_PAD 10
 #define Y_BY_ENUM(enum_val) ((enum_val) * (Y_ROW_PAD))
 
+//TODO: criar o encapsulamento do navegador para o drawer com os campos de 'do_update', trazer o cursor_cnt para cá também.
+
 /**
  * @brief Desenha a tela atual no display.
  *

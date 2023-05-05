@@ -69,15 +69,16 @@
 uint32_t packets_lost = 0;// global counter of lost packets
 
 char* mode_menu_strings[EQM_MODES_AMOUNT] = {
-        [MANUAL_MODE] = "Manual Mode",
-        [TRACKING_MODE] = "Start Tracking",
-        [GOTO_MODE] = "Go to Target",
-        [OFF_MODE] = "Free Movement"};
+		[MANUAL_MODE] = "Manual Mode",
+		[TRACKING_MODE] = "Start Tracking",
+		[GOTO_MODE] = "Go to Target",
+		[OFF_MODE] = "Free Movement"};
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+
 /* USER CODE BEGIN PFP */
 void nRF24_TX_ESB_setup(const uint8_t* addr);
 
@@ -115,136 +116,136 @@ static void update_home_handler();
   * @retval int
   */
 int main(void) {
-    /* USER CODE BEGIN 1 */
-
-    content_t arrow_cursor = {
-            .data = arrow,
-            .dim = {28, 28},
-            .pos = {2, 2},
-            .opt = {
-                    .fnt = NULL,
-                    .is_visible = true,
-                    .is_bitmap = true,
-            },
-    };
-
-    navigator_t navigator = {
-            .current_screen = &monitor_screen,
-            .next_screens = monitor_flow_screens,
-            .handler_table = settings_handlers_table,
-            .ctrl = {
-                    .menu = {
-                            .cursor_cnt = arrow_cursor,
-                            .head = 0,
-                            .selection = 0,
-                    },
-            },
-    };
-
-    /* USER CODE END 1 */
-
-    /* MCU Configuration--------------------------------------------------------*/
-
-    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-    HAL_Init();
-
-    /* USER CODE BEGIN Init */
-
-    /* USER CODE END Init */
-
-    /* Configure the system clock */
-    SystemClock_Config();
-
-    /* USER CODE BEGIN SysInit */
-
-    /* USER CODE END SysInit */
-
-    /* Initialize all configured peripherals */
-    MX_GPIO_Init();
-    MX_ADC1_Init();
-    MX_I2C2_Init();
-    MX_SPI2_Init();
-    /* USER CODE BEGIN 2 */
-
-
-    astro_targets_init();
-    SH1106_cleanInit();
-    SH1106_drawBitmapFullscreen(eqmount_logo);
-    SH1106_flush();
-    HAL_Delay(2000);
+	/* USER CODE BEGIN 1 */
+	
+	content_t arrow_cursor = {
+			.data = arrow,
+			.dim = {28, 28},
+			.pos = {2, 2},
+			.opt = {
+					.fnt = NULL,
+					.is_visible = true,
+					.is_bitmap = true,
+			},
+	};
+	
+	navigator_t navigator = {
+			.current_screen = &monitor_screen,
+			.next_screens = monitor_flow_screens,
+			.handler_table = settings_handlers_table,
+			.cursor_cnt = arrow_cursor,
+			.ctrl = {
+					.menu = {
+							.head = 0,
+							.selection = 0,
+					},
+			},
+	};
+	
+	/* USER CODE END 1 */
+	
+	/* MCU Configuration--------------------------------------------------------*/
+	
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
+	
+	/* USER CODE BEGIN Init */
+	
+	/* USER CODE END Init */
+	
+	/* Configure the system clock */
+	SystemClock_Config();
+	
+	/* USER CODE BEGIN SysInit */
+	
+	/* USER CODE END SysInit */
+	
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_ADC1_Init();
+	MX_I2C2_Init();
+	MX_SPI2_Init();
+	/* USER CODE BEGIN 2 */
+	
+	
+	astro_targets_init();
+	SH1106_cleanInit();
+	SH1106_drawBitmapFullscreen(eqmount_logo);
+	SH1106_flush();
+	HAL_Delay(2000);
 
 
 #ifdef USE_NRF24L01
 
 #if TEST_CARRIER == 1
-    uint16_t channel_offset = 0;
-    while (true) {
-        /** Keep sending the carrier */
-        nRF24_StartCarrier(nRF24_TXPWR_0dBm,
-                           (uint8_t) (EQM_RF_CHANNEL + 64 * cos((channel_offset / (double) ITERATIONS) * 2 * 3.1415)));
-        HAL_Delay(1);
-        channel_offset++;
-        if (channel_offset > ITERATIONS) {
-            channel_offset = 0;
-        }
-    }
+	uint16_t channel_offset = 0;
+	while (true) {
+		/** Keep sending the carrier */
+		nRF24_StartCarrier(nRF24_TXPWR_0dBm,
+						   (uint8_t) (EQM_RF_CHANNEL + 64 * cos((channel_offset / (double) ITERATIONS) * 2 * 3.1415)));
+		HAL_Delay(1);
+		channel_offset++;
+		if (channel_offset > ITERATIONS) {
+			channel_offset = 0;
+		}
+	}
 #endif
 
-    static const uint8_t nRF24_ADDR[] = "EQM0";
+	static const uint8_t nRF24_ADDR[] = "EQM0";
 
-    nrf24_data_t recv_data = {0};
+	nrf24_data_t recv_data = {0};
 
-    const nrf24_data_t init_msg = {
-            .kind = COMMAND,
-            .size = {
-                    .data = 7,
-                    .payload = PLD_LEN,
-            },
-            .data = "Connect",
-    };
+	const nrf24_data_t init_msg = {
+			.kind = COMMAND,
+			.size = {
+					.data = 7,
+					.payload = PLD_LEN,
+			},
+			.data = "Connect",
+	};
 
-    nRF24_TX_ESB_setup(nRF24_ADDR);
+	nRF24_TX_ESB_setup(nRF24_ADDR);
 
-    uint16_t retries = 0;
+	uint16_t retries = 0;
 
-    char* loading_points[] = {"", ".", "..", "..."};
-    char str_buff[32] = {0};
+	char* loading_points[] = {"", ".", "..", "..."};
+	char str_buff[32] = {0};
 
-    while (!nRF24_check(nRF24_ADDR)) {
-        retries++;
-        nRF24_TX_ESB_setup(nRF24_ADDR);
-        SH1106_clear();
-        SH1106_printStr(20, (SCR_H / 2) - 8, "ERRO - NRF24", &fnt7x10);
-        sprintf(str_buff, "Retries: %d", retries);
-        SH1106_printStr(20, (3 * SCR_H / 4) - 8, str_buff, &fnt7x10);
-        SH1106_flush();
-        HAL_Delay(100);
-    }
+	while (!nRF24_check(nRF24_ADDR)) {
+		retries++;
+		nRF24_TX_ESB_setup(nRF24_ADDR);
+		SH1106_clear();
+		SH1106_printStr(20, (SCR_H / 2) - 8, "ERRO - NRF24", &fnt7x10);
+		sprintf(str_buff, "Retries: %d", retries);
+		SH1106_printStr(20, (3 * SCR_H / 4) - 8, str_buff, &fnt7x10);
+		SH1106_flush();
+		HAL_Delay(100);
+	}
 
-    retries = 0;
-    nRF24_StopListening();
-    while (!nRF24_Talk(init_msg, NULL, nRF24_MODE_TX)) {
-        retries++;
-        SH1106_clear();
-        SH1106_printStr(3, (SCR_H / 2) - 12, "Mount not found", &fnt7x10);
-        sprintf(str_buff, "Searching %s", loading_points[retries % 4]);
-        SH1106_printStr(15, (3 * SCR_H / 4) - 12, str_buff, &fnt7x10);
-        SH1106_flush();
-        HAL_Delay(100);
-    }
+	retries = 0;
+	nRF24_StopListening();
+	while (!nRF24_Talk(init_msg, NULL, nRF24_MODE_TX)) {
+		retries++;
+		SH1106_clear();
+		SH1106_printStr(3, (SCR_H / 2) - 12, "Mount not found", &fnt7x10);
+		sprintf(str_buff, "Searching %s", loading_points[retries % 4]);
+		SH1106_printStr(15, (3 * SCR_H / 4) - 12, str_buff, &fnt7x10);
+		SH1106_flush();
+		HAL_Delay(100);
+	}
 
 #endif
-
-    /* USER CODE END 2 */
-
-    /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
-    while (1) {
-        /* USER CODE END WHILE */
-
-        /* USER CODE BEGIN 3 */
-    }
-    /* USER CODE END 3 */
+	
+	/* USER CODE END 2 */
+	
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
+	while (1) {
+		/* USER CODE END WHILE */
+		
+		/* USER CODE BEGIN 3 */
+	}
+	/* USER CODE END 3 */
 }
 
 /**
@@ -252,67 +253,67 @@ int main(void) {
   * @retval None
   */
 void SystemClock_Config(void) {
-    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-    RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-
-    /** Initializes the RCC Oscillators according to the specified parameters
-    * in the RCC_OscInitTypeDef structure.
-    */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-    RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
-    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL8;
-    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
-        Error_Handler();
-    }
-
-    /** Initializes the CPU, AHB and APB buses clocks
-    */
-    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
-    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
-        Error_Handler();
-    }
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-    PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
-        Error_Handler();
-    }
+	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+	RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+	
+	/** Initializes the RCC Oscillators according to the specified parameters
+	* in the RCC_OscInitTypeDef structure.
+	*/
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+	RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL8;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+		Error_Handler();
+	}
+	
+	/** Initializes the CPU, AHB and APB buses clocks
+	*/
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+	
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
+		Error_Handler();
+	}
+	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+	PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
+	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
+		Error_Handler();
+	}
 }
 
 /* USER CODE BEGIN 4 */
 void nRF24_TX_ESB_setup(const uint8_t* addr) {
-
-    // Do the initial configurations.
-    nRF24_init(addr, EQM_RF_CHANNEL);
-    nRF24_StopListening();
+	
+	// Do the initial configurations.
+	nRF24_init(addr, EQM_RF_CHANNEL);
+	nRF24_StopListening();
 }
 
 static void handle_list_menu_changes(uint8_t max_index, void* current_selection, void* current_head) {
-    int8_t tmp_sel;
-
-    tmp_sel = *(uint8_t*) current_selection;
-    tmp_sel += rotary_pop_dir() == CCW ? -1 : 1;
-    if (tmp_sel >= max_index) {
-        tmp_sel = max_index - 1;
-    } else if (tmp_sel < 0) {
-        tmp_sel = 0;
-    }
-    *(uint8_t*) current_selection = (uint8_t) tmp_sel;
-
-    if (tmp_sel >= (*(uint8_t*) current_head + MENU_SCREEN_ROWS)) {
-        (*(uint8_t*) current_head)++;
-    } else if (tmp_sel < *(uint8_t*) current_head) {
-        (*(uint8_t*) current_head)--;
-    }
+	int8_t tmp_sel;
+	
+	tmp_sel = *(uint8_t*) current_selection;
+	tmp_sel += rotary_pop_dir() == CCW ? -1 : 1;
+	if (tmp_sel >= max_index) {
+		tmp_sel = max_index - 1;
+	} else if (tmp_sel < 0) {
+		tmp_sel = 0;
+	}
+	*(uint8_t*) current_selection = (uint8_t) tmp_sel;
+	
+	if (tmp_sel >= (*(uint8_t*) current_head + MENU_SCREEN_ROWS)) {
+		(*(uint8_t*) current_head)++;
+	} else if (tmp_sel < *(uint8_t*) current_head) {
+		(*(uint8_t*) current_head)--;
+	}
 }
 
 //static void update_home_handler() {
@@ -594,12 +595,12 @@ void load_settings_changes(void) {
   * @retval None
   */
 void Error_Handler(void) {
-    /* USER CODE BEGIN Error_Handler_Debug */
-    /* User can add his own implementation to report the HAL error return state */
-    __disable_irq();
-    while (1) {
-    }
-    /* USER CODE END Error_Handler_Debug */
+	/* USER CODE BEGIN Error_Handler_Debug */
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1) {
+	}
+	/* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef USE_FULL_ASSERT
@@ -611,9 +612,9 @@ void Error_Handler(void) {
   * @retval None
   */
 void assert_failed(uint8_t* file, uint32_t line) {
-    /* USER CODE BEGIN 6 */
-    /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-    /* USER CODE END 6 */
+	/* USER CODE BEGIN 6 */
+	/* User can add his own implementation to report the file name and line number,
+	 ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+	/* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
