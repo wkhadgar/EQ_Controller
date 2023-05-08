@@ -9,12 +9,12 @@
 // Use bit-banding to draw pixel
 //   0 - use logic operations to set pixel color
 //   1 - use bit-banding to set pixel color
-#define SH1106_USE_BITBAND   0
+#define SH1106_USE_BITBAND   1
 
 // Pixel set function definition
 //   0 - call pixel function (less code size in cost of speed)
 //   1 - inline pixel function (higher speed in cost of code size)
-#define SH1106_OPT_PIXEL     0
+#define SH1106_OPT_PIXEL     1
 
 // DMA usage
 //   0 - DMA is not used

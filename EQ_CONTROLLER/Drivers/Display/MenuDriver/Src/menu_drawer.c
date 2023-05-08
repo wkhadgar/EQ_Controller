@@ -4,33 +4,53 @@
 
 #include "menu_drawer.h"
 
-void update_screen(navigator_t* navigator) {
+#define HAS_PAGINATED_OPTIONS 0
+
+void update_screen(navigator_t* navigator, eqm_settings_t* settings) {
     SH1106_clear();
 
-    switch (navigator->current_screen->details.type) {
+    screen_properties_t* curr_screen = navigator->current_screen;
+
+    if (curr_screen->update_buffers != NULL) {
+        curr_screen->update_buffers(settings);
+    }
+
+    switch (curr_screen->details.type) {
         case MONITOR_SCREEN:
         case SETTING_SCREEN:
-            print_contents(navigator->current_screen->contents, navigator->current_screen->details.content_amount);
+            print_contents(curr_screen->contents,
+                           curr_screen->details.content_amount);
             break;
         case OPTIONS_SCREEN:
-            if (navigator->ctrl.menu.head + MENU_ROWS >= navigator->current_screen->details.content_amount) {
-                print_contents_rows(navigator->current_screen->contents,
-                                    navigator->current_screen->contents[navigator->ctrl.menu.head].pos.y,
-                                    navigator->current_screen->details.content_amount - navigator->ctrl.menu.head);
-            } else {
-                print_contents_rows(navigator->current_screen->contents,
-                                    navigator->current_screen->contents[navigator->ctrl.menu.head].pos.y,
-                                    MENU_ROWS);
-            }
+            curr_screen->cursor_bitmap->pos.y =
+                    (navigator->ctrl.menu.selection - navigator->ctrl.menu.head) * Y_ROW_PAD;
+            print_content(*curr_screen->cursor_bitmap);
 
-            navigator->cursor_cnt.pos.y = (navigator->ctrl.menu.head - navigator->ctrl.menu.selection) * Y_ROW_PAD;
-            print_content(navigator->cursor_cnt);
+#if HAS_PAGINATED_OPTIONS == 1
+            if (navigator->ctrl.menu.head + MENU_ROWS >=
+                    curr_screen->details.content_amount) {
+                print_contents_rows(
+                        curr_screen->contents + navigator->ctrl.menu.head,
+                        curr_screen->contents[navigator->ctrl.menu.head].pos.y,
+                        curr_screen->details.content_amount -
+                                navigator->ctrl.menu.head);
+            } else {
+#endif
+            print_contents_rows(
+                    curr_screen->contents + navigator->ctrl.menu.head,
+                    curr_screen->contents[navigator->ctrl.menu.head].pos.y,
+                    MENU_ROWS);
+#if HAS_PAGINATED_OPTIONS == 1
+            }
+#endif
             break;
     }
 
-    if (navigator->current_screen->post_draw != NULL) {
-        navigator->current_screen->post_draw();
+    if (curr_screen->post_draw != NULL) {
+        curr_screen->post_draw();
     }
+
+    navigator->has_changes = false;
 
     SH1106_flush();
 }

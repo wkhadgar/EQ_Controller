@@ -18,20 +18,6 @@ typedef enum __attribute__((packed)) monitor_contents {
     MONITOR_CONTENTS_AMOUNT,
 } monitor_contents_t;
 
-void monitor_draws(void);
-
-extern content_t monitor_cnts[];
-
-extern const uint8_t* mode_bitmaps[];
-
-static screen_style_t monitor_screen = {
-        .details = {
-                .id = SCR_M_HOME,
-                .type = MONITOR_SCREEN,
-                .content_amount = MONITOR_CONTENTS_AMOUNT,
-        },
-        .contents = monitor_cnts,
-        .post_draw = &monitor_draws,
-};
+extern screen_properties_t monitor_screen;
 
 #endif//DEBUG_SCREEN_MONITOR_H

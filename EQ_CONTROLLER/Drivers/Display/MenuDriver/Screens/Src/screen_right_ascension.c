@@ -4,12 +4,18 @@
 
 #include "screen_right_ascension.h"
 
+static uint8_t ra_buffer[] = "00h00m00s";
 
-void ra_draws(void) {
+static void ra_draws(void) {
     SH1106_drawHLine(0, SCR_W - 20, 11);
 }
 
-void right_ascension_handler(int8_t dir, eqm_settings_t* setting) {
+static void update_buffers(eqm_settings_t* settings) {
+    sprintf((char*) ra_buffer, "%02dh%02dm%02ds",
+            settings->RA.hours, settings->RA.minutes, settings->RA.seconds);
+}
+
+static void right_ascension_handler(int8_t dir, eqm_settings_t* setting) {
     setting->RA.decimal_hours += (dir * MINUTE_IN_HOURS);
 
     if (setting->RA.decimal_hours >= 24) {
@@ -19,12 +25,23 @@ void right_ascension_handler(int8_t dir, eqm_settings_t* setting) {
     }
 
     update_time_fields(&setting->RA);
-    sprintf((char*) ra_cnts[RA_VALUE].data, "%02dh%02dm%02ds",
-            setting->RA.hours, setting->RA.minutes, setting->RA.seconds);
 }
 
-content_t ra_cnts[RA_CONTENTS_AMOUNT] = {
+static content_t ra_cnts[RA_CONTENTS_AMOUNT] = {
         [RA_HEADER] = STR_CONTENT_INIT("Right Ascension:", 2, 2, true, &fnt5x7),
-        [RA_VALUE] = STR_CONTENT_INIT("00h00m00s", 20, 30, true, &fnt5x7),
+        [RA_VALUE] = STR_CONTENT_INIT(ra_buffer, 25, 30, true, &fnt7x10),
         [RA_BITMAP] = STR_CONTENT_INIT("HRS", 60, 50, true, &fnt5x7),
+};
+
+screen_properties_t right_ascension_screen = {
+        .details = {
+                .id = SCR_S_RIGHT_ASCENSION,
+                .type = SETTING_SCREEN,
+                .content_amount = RA_CONTENTS_AMOUNT,
+        },
+        .contents = ra_cnts,
+        .cursor_bitmap = NULL,
+        .setting_callback = &right_ascension_handler,
+        .update_buffers = &update_buffers,
+        .post_draw = &ra_draws,
 };

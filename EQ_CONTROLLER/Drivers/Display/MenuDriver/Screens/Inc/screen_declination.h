@@ -15,20 +15,6 @@ typedef enum __attribute__((packed)) dec_contents {
     DEC_CONTENTS_AMOUNT,
 } dec_contents_t;
 
-void dec_draws(void);
-
-void declination_handler(int8_t dir, eqm_settings_t* dec_setting);
-
-extern content_t dec_cnts[];
-
-static screen_style_t declination_screen = {
-        .details = {
-                .id = SCR_S_DECLINATION,
-                .type = SETTING_SCREEN,
-                .content_amount = DEC_CONTENTS_AMOUNT,
-        },
-        .contents = dec_cnts,
-        .post_draw = &dec_draws,
-};
+extern screen_properties_t declination_screen;
 
 #endif//DEBUG_SCREEN_DECLINATION_H

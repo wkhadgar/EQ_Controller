@@ -7,8 +7,8 @@
 
 #include "astro_targets.h"
 
-#define MINUTE_IN_DEGREES (0.01666666)
-#define MINUTE_IN_HOURS (0.01666666)
+#define MINUTE_IN_DEGREES (0.0166667)
+#define MINUTE_IN_HOURS (0.0166667)
 
 
 typedef enum hemisphere {
@@ -16,7 +16,7 @@ typedef enum hemisphere {
     SOUTH,
 } hemisphere_t;
 
-typedef enum ewm_mode {
+typedef enum eqm_mode {
     MANUAL_MODE = 0,
     TRACKING_MODE,
     GOTO_MODE,
@@ -43,6 +43,14 @@ inline void update_time_fields(time__t* time) {
     time->hours = (uint8_t) time->decimal_hours;
     time->minutes = (uint8_t) ((time->decimal_hours - time->hours) * 60);
     time->seconds = (uint8_t) (((time->decimal_hours - time->hours) * 60 - time->minutes) * 60 + 0.5);
+    if (time->seconds == 60) {
+        time->minutes++;
+        time->seconds = 0;
+    }
+    if (time->minutes == 60) {
+        time->hours++;
+        time->minutes = 0;
+    }
 }
 
 /**
@@ -51,9 +59,17 @@ inline void update_time_fields(time__t* time) {
  * @param time Angulo a ter seus campos atualizados.
  */
 inline void update_angle_fields(angle_t* angle) {
-    angle->degrees = (uint8_t) angle->decimal_degrees;
+    angle->degrees = (int16_t) angle->decimal_degrees;
     angle->arc_minutes = (uint8_t) ((angle->decimal_degrees - angle->degrees) * 60);
     angle->arc_seconds = (uint8_t) (((angle->decimal_degrees - angle->degrees) * 60 - angle->arc_minutes) * 60 + 0.5);
+    if (angle->arc_seconds == 60) {
+        angle->arc_minutes++;
+        angle->arc_seconds = 0;
+    }
+    if (angle->arc_minutes == 60) {
+        angle->degrees++;
+        angle->arc_minutes = 0;
+    }
 }
 
 #endif//DEBUG_EQM_SETTINGS_H
