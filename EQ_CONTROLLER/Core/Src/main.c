@@ -80,7 +80,7 @@ char* mode_menu_strings[EQM_MODES_AMOUNT] = {
 void SystemClock_Config(void);
 
 /* USER CODE BEGIN PFP */
-void menu_process(navigator_t* navigator, eqm_settings_t* settings) {
+void menu_process(navigator_t* navigator, eqm_settings_t const* settings) {
     switch (navigator->current_screen->details.type) {
 
         case MONITOR_SCREEN:
@@ -91,8 +91,7 @@ void menu_process(navigator_t* navigator, eqm_settings_t* settings) {
                 navigator->has_changes = true;
             }
             break;
-        case SETTING_SCREEN:
-        case OPTIONS_SCREEN:
+        default:
             break;
     }
 
@@ -133,15 +132,14 @@ int main(void) {
     };
 
     navigator_t navigator = {
+            .screens = screens_adresses,
             .current_screen = &monitor_screen,
-            .next_screens = monitor_flow_screens,
             .ctrl = {
                     .menu = {
                             .head = 0,
                             .selection = 0,
                     },
             },
-            .screen_flow = scr_flow,
             .has_changes = true,
     };
 

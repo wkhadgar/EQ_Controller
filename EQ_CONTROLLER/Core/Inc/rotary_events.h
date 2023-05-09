@@ -8,7 +8,7 @@
 #include "main.h"
 
 #define SPIN_DEBOUNCE_DELAY 25
-#define BUTTON_DEBOUNCE_DELAY 50
+#define BUTTON_DEBOUNCE_DELAY 75
 
 typedef enum {
     CCW = -1,

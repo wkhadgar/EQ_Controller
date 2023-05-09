@@ -47,7 +47,9 @@ typedef void (* const post_draw_t)(void);
 
 typedef void (* const setting_callback_t)(int8_t, eqm_settings_t*);
 
-typedef void (* const update_buffers_callback_t)(eqm_settings_t*);
+typedef void (* const confirm_callback_t)(bool, int8_t, eqm_settings_t*);
+
+typedef void (* const update_buffers_callback_t)(eqm_settings_t const*);
 
 /**
  * @brief Enumera os tipos de tela.
@@ -56,6 +58,8 @@ typedef enum screen_modes {
     MONITOR_SCREEN = 0, /**< Tipo de tela cuja finalidade é mostrar informações. */
     SETTING_SCREEN,     /**< Tipo de tela cuja finalidade é modificar um atributo. */
     OPTIONS_SCREEN,     /**< Tipo de tela onde novas opções são navegáveis e selecionáveis. */
+    CONFIRM_SCREEN,     /**< Tipo de tela cuja finalidade é confirmar uma ação. */
+    POPUP_SCREEN,       /**< Tipo de tela sobreponível que indica um evento. */
 } screen_modes_t;
 
 /**
@@ -67,12 +71,16 @@ typedef enum screens {
     SCR_S_DECLINATION,
     SCR_S_RIGHT_ASCENSION,
     SCR_O_TARGET_SELECTOR,
-    SCR_S_UPDATE_HOME,
     SCR_S_CONTRAST_VAL,
     SCR_S_CONTRAST_TIME,
     SCR_S_HEMISPHERE,
     SCR_O_EQM_MODE,
 
+    SCR_CONFIRM_TGT,
+    SCR_CONFIRM_UPDATE_HOME,
+    SCR_CONFIRM_MODE,
+
+    SCR_POP_UP,
     SCR_AMOUNT,
     SCR_NONE,
 } screens_t;
@@ -111,30 +119,27 @@ typedef struct screen_style {
         const uint8_t content_amount; /**< Quantidade de conteúdos na página. */
     } details;
 
+    const screens_t* const next_screens;
+
     update_buffers_callback_t update_buffers;
 
-    setting_callback_t setting_callback;
+    union {
+        setting_callback_t setting_callback;
+        confirm_callback_t confirm_callback;
+    };
 
-    post_draw_t post_draw;
+    post_draw_t post_draw_callback;
 
     content_t* cursor_bitmap;
-
     content_t* contents;
 } screen_properties_t;
-
-typedef struct screen_flow {
-    const screen_properties_t* screen;
-    const screens_t* flow;
-} screen_flow_t;
 
 /**
  * @brief Estrutura de controle do menu.
  */
 typedef struct navigator {
+    screen_properties_t* const* const screens; /**< Tabela de telas por id. */
     screen_properties_t* current_screen; /**< Ponteiro para a tela atual. */
-    screens_t* next_screens;        /**< Fluxo imediato de telas-alvo */
-
-    const screen_flow_t* screen_flow; /**< Tabela de fluxo de navegação por id. */
 
     union control {
 
@@ -148,7 +153,12 @@ typedef struct navigator {
             uint8_t selection; /**< Seleção atual do menu na tela. */
         } menu;
 
+        struct confirm_screen {
+            uint8_t previous_screen_selection; /**< Identificador genérico da seleção precedente. */
+            bool is_confirmed;
+        } confirm;
     } ctrl;
+
 
     bool has_changes; /**< Indica se houve mudanças no menu. */
 
@@ -188,7 +198,9 @@ inline void print_content_rows(content_t cnt, uint8_t head_y) {
  */
 inline void print_contents(content_t* contents, uint8_t amount) {
     for (uint8_t i = 0; i < amount; i++) {
-        print_content(contents[i]);
+        if (contents[i].opt.is_visible) {
+            print_content(contents[i]);
+        }
     }
 }
 
@@ -200,7 +212,9 @@ inline void print_contents(content_t* contents, uint8_t amount) {
  */
 inline void print_contents_rows(content_t* contents, uint8_t head_y, uint8_t amount) {
     for (uint8_t i = 0; i < amount; i++) {
-        print_content_rows(contents[i], head_y);
+        if (contents[i].opt.is_visible) {
+            print_content_rows(contents[i], head_y);
+        }
     }
 }
 

@@ -109,8 +109,8 @@ const astro_target_t Rigel = {
 						.degrees = 8,
 						.arc_minutes = 12,
 						.arc_seconds = 6,
-				},
-		},
+                },
+        },
 };
 
 /*-------------------------ROM TARGETS END-------------------------------*/
@@ -119,28 +119,28 @@ const astro_target_t Rigel = {
  * @brief Control array for easier selection of the ROM targets.
  */
 
-static astro_target_t astro_target[_TARGET_AMOUNT]; //TODO revisar a redundancia.
+astro_target_t astro_targets[_TARGET_AMOUNT]; //TODO revisar a redundancia.
 
 void astro_targets_init(void) {
-	astro_target[JUPITER] = Jupiter;
-	astro_target[MARS] = Mars;
-	astro_target[RIGEL] = Rigel;
-	astro_target[SATURN] = Saturn;
-	astro_target[SIRIUS] = Sirius;
-	astro_target[VENUS] = Venus;
+    astro_targets[JUPITER] = Jupiter;
+    astro_targets[MARS] = Mars;
+    astro_targets[RIGEL] = Rigel;
+    astro_targets[SATURN] = Saturn;
+    astro_targets[SIRIUS] = Sirius;
+    astro_targets[VENUS] = Venus;
 }
 
 void astro_user_target_set(astro_target_t tgt, target_t pos) {
 	if (pos < USER_TGT_ONE) {
 		return;
 	}
-	
-	astro_target[pos] = tgt;
+
+    astro_targets[pos] = tgt;
 }
 
 astro_target_t astro_target_get(target_t pos) {
 	if (pos >= _TARGET_AMOUNT) {
-		return astro_target[_TARGET_AMOUNT - 1];
+		return astro_targets[_TARGET_AMOUNT - 1];
 	}
-	return astro_target[pos];
+	return astro_targets[pos];
 }
