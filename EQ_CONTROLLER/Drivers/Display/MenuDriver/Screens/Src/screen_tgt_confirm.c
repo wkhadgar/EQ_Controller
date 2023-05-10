@@ -4,7 +4,7 @@
 #include "menu_drawer.h"
 
 typedef enum tgt_confirm_contents {
-    TGT_CONF_HEADER = 0,
+    MODE_CONF_HEADER = 0,
     TGT_CONF_SUB_HEADER,
     TGT_CONF_NO,
     TGT_CONF_YES,
@@ -16,7 +16,7 @@ typedef enum tgt_confirm_contents {
 extern astro_target_t astro_targets[];
 
 static content_t tgt_conf_cnts[TGT_CONF_CONTENTS_AMOUNT] = {
-        [TGT_CONF_HEADER] = STR_CONTENT_INIT("(!) Are you sure to", 2, 2, true, &fnt5x7),
+        [MODE_CONF_HEADER] = STR_CONTENT_INIT("(!) Are you sure to", 2, 2, true, &fnt5x7),
         [TGT_CONF_SUB_HEADER] = STR_CONTENT_INIT("    switch target?", 2, 10, true, &fnt5x7),
         [TGT_CONF_NO] = STR_CONTENT_INIT("No", 22, 30, true, &fnt7x10),
         [TGT_CONF_YES] = STR_CONTENT_INIT("Yes", 82, 30, true, &fnt7x10),

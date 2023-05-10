@@ -82,7 +82,6 @@ typedef enum screens {
 
     SCR_POP_UP,
     SCR_AMOUNT,
-    SCR_NONE,
 } screens_t;
 
 /**
@@ -158,7 +157,6 @@ typedef struct navigator {
             bool is_confirmed;
         } confirm;
     } ctrl;
-
 
     bool has_changes; /**< Indica se houve mudanças no menu. */
 

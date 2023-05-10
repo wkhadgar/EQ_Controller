@@ -2,6 +2,7 @@
  * Created by paulo on 09/05/2023.
  */
 #include "menu_drawer.h"
+#include "nrf24l01p.h"
 
 typedef enum update_home_confirm_contents {
     UPDT_HOME_CONF_HEADER = 0,
@@ -22,9 +23,13 @@ static content_t updt_home_conf_cnts[UPDT_HOME_CONF_CONTENTS_AMOUNT] = {
 };
 
 static void confirm_cb(bool is_confirm, int8_t dir, eqm_settings_t* settings) {
-    if (is_confirm) { //TODO
-        settings->DEC;
-        settings->RA;
+
+    if (is_confirm) {
+#ifdef USE_NRF24L01
+        nrf24_data_t updt_home_cmd;
+        nRF24_PrepareData("UPDT HOME", 10, COMMAND, &updt_home_cmd);
+        nRF24_Talk(updt_home_cmd, NULL, nRF24_MODE_TX);
+#endif
         return;
     }
 
