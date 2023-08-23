@@ -49,7 +49,7 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Drivers/NRF24L01/Inc Drivers/Display/Inc Infra/Navigation/Inc Infra/Communication/Inc App/Screens/Inc Core/Inc Drivers/CMSIS/Include Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/STM32F1xx_HAL_Driver/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/CMSIS/Include Core/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Drivers/STM32F1xx_HAL_Driver/Inc)
+include_directories(Drivers/NRF24L01/Inc Drivers/Display/Inc Infra/Navigation/Inc Infra/eqm_communications/Inc App/Screens/Inc Core/Inc Drivers/CMSIS/Include Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/STM32F1xx_HAL_Driver/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/CMSIS/Include Core/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Drivers/STM32F1xx_HAL_Driver/Inc)
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -DUSE_NRF24L01)
 
