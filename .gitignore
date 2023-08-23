@@ -34,11 +34,8 @@
 *.bak
 *.launch
 *.code-workspace
-*.txt
 
 cmake-build-debug/
-Debug/
-.vscode/
 .idea/
 .settings/
 .metadata/

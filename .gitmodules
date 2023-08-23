@@ -1,0 +1,3 @@
+[submodule "Infra/eqm_communications"]
+	path = Infra/eqm_communications
+	url = https://github.com/wkhadgar/eqm_communications
