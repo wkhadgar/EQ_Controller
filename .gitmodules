@@ -1,3 +1,9 @@
-[submodule "Infra/eqm_communications"]
-	path = Infra/eqm_communications
-	url = https://github.com/wkhadgar/eqm_communications
+[submodule "EQ_Comm"]
+	path = Infra/EQ_Comm
+	url = https://github.com/wkhadgar/EQ_Comm
+[submodule "SH1106_I2C"]
+	path = Drivers/SH1106_I2C
+	url = https://github.com/wkhadgar/SH1106_I2C
+[submodule "nRF24L01_STM32"]
+	path = Drivers/nRF24L01_STM32
+	url = https://github.com/wkhadgar/nRF24L01_STM32
