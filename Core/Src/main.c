@@ -19,23 +19,22 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "gpio.h"
 #include "i2c.h"
 #include "spi.h"
 #include "tim.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <math.h>
+
+#include "bitmaps.h"
 #include "eqm_settings.h"
-#include "flags.h"
-#include "math.h"
 #include "menu_drawer.h"
 #include "menu_flow.h"
-#include "nrf24l01p.h"
+#include "message_manager.h"
 #include "rotary_events.h"
 #include "sh1106.h"
-#include <memory.h>
-#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -51,12 +50,6 @@
 #define SELECTION_ARROW_DELAY 20
 #define DEG_TO_RAD_CONST (M_PI / 180)
 
-#define EQM_RF_CHANNEL 0
-#define TEST_CARRIER 0
-
-#if TEST_CARRIER == 1
-#define ITERATIONS 300
-#endif
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -66,8 +59,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
-uint32_t packets_lost = 0;// global counter of lost packets
 
 char* mode_menu_strings[EQM_MODES_AMOUNT] = {
         [MANUAL_MODE] = "Manual Mode",
@@ -170,93 +161,24 @@ int main(void) {
     MX_TIM3_Init();
     /* USER CODE BEGIN 2 */
 
-
     astro_targets_init();
-    SH1106_cleanInit();
-    SH1106_orientation(SH1106_ORIENT_NORMAL);
-    SH1106_drawBitmapFullscreen(manual_mode_bmp);
-    SH1106_flush();
+    sh1106_init();
+    sh1106_draw_bitmap(eqmount_logo, 0, 0, EQM_LOGO_W, EQM_LOGO_H);
+    sh1106_flush();
     HAL_Delay(2000);
-    bool flip = false;
-    int i=0;
-    while (1) {
-        if (rotary_pop_press()) {
-            flip = !flip;
-            HAL_GPIO_TogglePin(LD0_GPIO_Port, LD0_Pin);
-        }
 
-        SH1106_drawBitmapFullscreen(!flip ? manual_mode_bmp : epd_bitmap_allArray[i]);
-        if (flip){
-        	i++;
-            HAL_Delay(200);
-            if (i==9) {
-            	i = 0;
-            }
-        }
-        SH1106_flush();
-
-    }
-
-
-#ifdef USE_NRF24L01
-
-#if TEST_CARRIER == 1
+#if MSG_MNG_TEST_CARRIER
     uint16_t channel_offset = 0;
     while (true) {
         /** Keep sending the carrier */
         nRF24_StartCarrier(nRF24_TXPWR_0dBm,
-                           (uint8_t) (EQM_RF_CHANNEL + 64 * cos((channel_offset / (double) ITERATIONS) * 2 * 3.1415)));
+                           (uint8_t) ((MSG_MNG_EQM_RF_CHANNEL + channel_offset) % 128));
         HAL_Delay(1);
         channel_offset++;
-        if (channel_offset > ITERATIONS) {
+        if (channel_offset > MSG_MNG_CARRIER_ITERATIONS) {
             channel_offset = 0;
         }
     }
-#endif
-
-    static const uint8_t nRF24_ADDR[] = "EQM0";
-
-    nrf24_data_t recv_data = {0};
-
-    const nrf24_data_t init_msg = {
-            .kind = COMMAND,
-            .size = {
-                    .data = 7,
-                    .payload = PLD_LEN,
-            },
-            .data = "Connect",
-    };
-
-    nRF24_TX_ESB_setup(nRF24_ADDR);
-
-    uint16_t retries = 0;
-
-    char* loading_points[] = {"", ".", "..", "..."};
-    char str_buff[32] = {0};
-
-    while (!nRF24_check(nRF24_ADDR)) {
-        retries++;
-        nRF24_TX_ESB_setup(nRF24_ADDR);
-        SH1106_clear();
-        SH1106_printStr(20, (SCR_H / 2) - 8, "ERRO - NRF24", &fnt7x10);
-        sprintf(str_buff, "Retries: %d", retries);
-        SH1106_printStr(20, (3 * SCR_H / 4) - 8, str_buff, &fnt7x10);
-        SH1106_flush();
-        HAL_Delay(100);
-    }
-
-    retries = 0;
-    nRF24_StopListening();
-    while (!nRF24_Talk(init_msg, NULL, nRF24_MODE_TX)) {
-        retries++;
-        SH1106_clear();
-        SH1106_printStr(3, (SCR_H / 2) - 12, "Mount not found", &fnt7x10);
-        sprintf(str_buff, "Searching %s", loading_points[retries % 4]);
-        SH1106_printStr(15, (3 * SCR_H / 4) - 12, str_buff, &fnt7x10);
-        SH1106_flush();
-        HAL_Delay(100);
-    }
-
 #endif
 
     /* USER CODE END 2 */
@@ -302,8 +224,7 @@ void SystemClock_Config(void) {
 
     /** Initializes the CPU, AHB and APB buses clocks
     */
-    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
-                                  | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
     RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
     RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -607,7 +528,7 @@ void Error_Handler(void) {
     /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
@@ -615,11 +536,10 @@ void Error_Handler(void) {
   * @param  line: assert_param error line source number
   * @retval None
   */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
+void assert_failed(uint8_t* file, uint32_t line) {
+    /* USER CODE BEGIN 6 */
     /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
+    /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

@@ -48,7 +48,7 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(${includes} Drivers/NRF24L01/Inc Drivers/Display/Inc Infra/Navigation/Inc Infra/Communication/Inc App/Screens/Inc)
+include_directories(${includes} Drivers/nRF24L01_STM32/Inc Drivers/SH1106_I2C/Inc Drivers/Rotary/Inc Infra/Navigation/Inc Infra/EQ_Comm/Inc App/Inc)
 
 add_definitions(${defines})
 
