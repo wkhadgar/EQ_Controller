@@ -26,7 +26,7 @@ static uint8_t ra_buffer[] = "00h00m00s";
 static uint8_t mode_buffer[32];
 
 static void monitor_draws(void) {
-    SH1106_drawLine(18, 33, 108, 33);
+    sh1106_draw_line(18, 33, 108, 33);
 }
 
 static void update_buffers(eqm_settings_t const* settings) {

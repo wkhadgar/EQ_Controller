@@ -50,13 +50,13 @@
         },                                                   \
     }
 
-typedef void (* const post_draw_t)(void);
+typedef void (*const post_draw_t)(void);
 
-typedef void (* const setting_callback_t)(int8_t, eqm_settings_t*);
+typedef void (*const setting_callback_t)(int8_t, eqm_settings_t*);
 
-typedef void (* const confirm_callback_t)(bool, int8_t, eqm_settings_t*);
+typedef void (*const confirm_callback_t)(bool, int8_t, eqm_settings_t*);
 
-typedef void (* const update_buffers_callback_t)(eqm_settings_t const*);
+typedef void (*const update_buffers_callback_t)(eqm_settings_t const*);
 
 /**
  * @brief Enumera os tipos de tela.
@@ -109,9 +109,9 @@ typedef struct content {
 
     struct options {
         const font_t* fnt;      /**< Fonte do conteúdo, caso seja uma string. */
-        uint8_t is_bitmap: 1;  /**< Indica o conteúdo é um bitmap. */
-        uint8_t is_visible: 1; /**< Indica o conteúdo é visível atualmente. */
-        uint8_t padding: 6;    /**< Padding. */
+        uint8_t is_bitmap : 1;  /**< Indica o conteúdo é um bitmap. */
+        uint8_t is_visible : 1; /**< Indica o conteúdo é visível atualmente. */
+        uint8_t padding : 6;    /**< Padding. */
     } opt;                      /**< Opções do conteúdo. */
 } content_t;
 
@@ -145,13 +145,13 @@ typedef struct screen_style {
  */
 typedef struct navigator {
     screen_properties_t* const* const screens; /**< Tabela de telas por id. */
-    screen_properties_t* current_screen; /**< Ponteiro para a tela atual. */
+    screen_properties_t* current_screen;       /**< Ponteiro para a tela atual. */
 
     union control {
 
         struct monitor_ctrl {
             uint8_t update_threshold; /**< Limite onde a tela deve ser atualizada.*/
-            uint8_t update_counter; /**< Contador para atualização da tela. */
+            uint8_t update_counter;   /**< Contador para atualização da tela. */
         } monitor;
 
         struct menu_ctrl {
@@ -176,9 +176,9 @@ typedef struct navigator {
  */
 inline void print_content(content_t cnt) {
     if (cnt.opt.is_bitmap) {
-        SH1106_drawBitmap(cnt.pos.x, cnt.pos.y, cnt.dim.width, cnt.dim.height, cnt.data);
+        sh1106_draw_bitmap(cnt.data, cnt.pos.x, cnt.pos.y, cnt.dim.width, cnt.dim.height);
     } else {
-        SH1106_printStr(cnt.pos.x, cnt.pos.y, (const char*) cnt.data, cnt.opt.fnt);
+        sh1106_print(cnt.data, cnt.pos.x, cnt.pos.y, cnt.opt.fnt);
     }
 }
 
@@ -189,9 +189,9 @@ inline void print_content(content_t cnt) {
  */
 inline void print_content_rows(content_t cnt, uint8_t head_y) {
     if (cnt.opt.is_bitmap) {
-        SH1106_drawBitmap(cnt.pos.x, cnt.pos.y - head_y, cnt.dim.width, cnt.dim.height, cnt.data);
+        sh1106_draw_bitmap(cnt.data, cnt.pos.x, cnt.pos.y - head_y, cnt.dim.width, cnt.dim.height);
     } else {
-        SH1106_printStr(cnt.pos.x, cnt.pos.y - head_y, (const char*) cnt.data, cnt.opt.fnt);
+        sh1106_print(cnt.data, cnt.pos.x, cnt.pos.y - head_y, cnt.opt.fnt);
     }
 }
 

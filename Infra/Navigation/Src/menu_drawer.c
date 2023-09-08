@@ -14,7 +14,7 @@
 #define HAS_PAGINATED_OPTIONS 0
 
 void update_screen(navigator_t* navigator, eqm_settings_t const* settings) {
-    SH1106_clear();
+    sh1106_clear();
 
 
     if (navigator->current_screen->update_buffers != NULL) {
@@ -60,5 +60,5 @@ void update_screen(navigator_t* navigator, eqm_settings_t const* settings) {
 
     navigator->has_changes = false;
 
-    SH1106_flush();
+    sh1106_flush();
 }

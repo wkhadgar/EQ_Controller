@@ -16,7 +16,7 @@ static uint8_t hemisphere_buffer[] = "_____";
 static uint8_t hemisphere_bmp_buffer[72];
 
 static void hemisphere_draws(void) {
-    SH1106_drawHLine(0, SCR_W - 20, 11);
+    sh1106_draw_h_line(0, SCR_W - 20, 11);
 }
 
 static content_t hemisphere_cnts[HEMISPHERE_CONTENTS_AMOUNT] = {

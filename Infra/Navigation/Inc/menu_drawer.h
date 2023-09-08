@@ -14,6 +14,7 @@
 
 #include "menu_infra.h"
 #include "menu_nav.h"
+#include "bitmaps.h"
 
 #define X_LEFT_PAD 15
 #define Y_ROW_PAD 11

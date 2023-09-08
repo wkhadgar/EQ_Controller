@@ -101,7 +101,7 @@ void menu_process(navigator_t* navigator, eqm_settings_t const* settings) {
 void nRF24_TX_ESB_setup(const uint8_t* addr) {
 
     // Do the initial configurations.
-    nRF24_init(addr, EQM_RF_CHANNEL);
+    nRF24_init(addr, 110);
     nRF24_StopListening();
 }
 #endif

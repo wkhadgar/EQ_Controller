@@ -15,7 +15,7 @@ typedef enum __attribute__((packed)) ra_contents {
 static uint8_t ra_buffer[] = "00h00m00s";
 
 static void ra_draws(void) {
-    SH1106_drawHLine(0, SCR_W - 20, 11);
+    sh1106_draw_h_line(0, SCR_W - 20, 11);
 }
 
 static void update_buffers(eqm_settings_t const* settings) {

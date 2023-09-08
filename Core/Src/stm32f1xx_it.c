@@ -24,7 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "rotary_events.h"
 #include "nrf24l01p.h"
-#include "flags.h"
+#include "nrf_flags.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -211,14 +211,14 @@ void EXTI3_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(NRF_IRQ_Pin);
   /* USER CODE BEGIN EXTI3_IRQn 1 */
 	status = nRF24_GetStatus();
-	if (status & nRF24_FLAG_TX_DS) {
-		set_flag(NRF_SENT);
+	if (status & NRF24_FLAG_TX_DS) {
+		nrf_set_flag(NRF_SENT);
 	}
-	if (status & nRF24_FLAG_RX_DR) {
-		set_flag(NRF_RECEIVE);
+	if (status & NRF24_FLAG_RX_DR) {
+		nrf_set_flag(NRF_RECEIVE);
 	}
-	if (status & nRF24_FLAG_MAX_RT) {
-		set_flag(NRF_MAX_RT);
+	if (status & NRF24_FLAG_MAX_RT) {
+		nrf_set_flag(NRF_MAX_RT);
 	}
 	
 	//nRF24_ClearIRQFlags();

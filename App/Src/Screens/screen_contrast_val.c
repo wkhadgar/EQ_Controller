@@ -15,8 +15,8 @@ typedef enum __attribute__((packed)) cont_val_contents {
 static uint8_t cont_val_buffer[] = "000%";
 
 static void cont_val_draws(void) {
-    SH1106_drawHLine(0, SCR_W - 20, 11);
-    SH1106_fillRect(0, SCR_H - 20, SCR_W, SCR_H);
+    sh1106_draw_h_line(0, SCR_W - 20, 11);
+    sh1106_draw_rect(0, SCR_H - 20, SCR_W, SCR_H, true);
 }
 
 static void update_buffers(eqm_settings_t const* settings) {
