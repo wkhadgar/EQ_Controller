@@ -39,7 +39,7 @@ typedef struct eqm_settings {
  *
  * @param time Tempo a ter seus campos atualizados.
  */
-inline void update_time_fields(time__t* time) {
+static inline void update_time_fields(time__t* time) {
     time->hours = (uint8_t) time->decimal_hours;
     time->minutes = (uint8_t) ((time->decimal_hours - time->hours) * 60);
     time->seconds = (uint8_t) (((time->decimal_hours - time->hours) * 60 - time->minutes) * 60 + 0.5);
@@ -56,9 +56,9 @@ inline void update_time_fields(time__t* time) {
 /**
  * @brief Atualiza os campos de um angulo, baseado no seu angulo decimal salvo.
  *
- * @param time Angulo a ter seus campos atualizados.
+ * @param angle Angulo a ter seus campos atualizados.
  */
-inline void update_angle_fields(angle_t* angle) {
+static inline void update_angle_fields(angle_t* angle) {
     angle->degrees = (int16_t) angle->decimal_degrees;
     angle->arc_minutes = (uint8_t) ((angle->decimal_degrees - angle->degrees) * 60);
     angle->arc_seconds = (uint8_t) (((angle->decimal_degrees - angle->degrees) * 60 - angle->arc_minutes) * 60 + 0.5);
