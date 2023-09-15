@@ -1,0 +1,44 @@
+/ {
+    zephyr,user    {
+        io-channels = <&adc1 0>;
+    };
+};
+
+&i2c2 {
+    status = "okay";
+
+    sh1106: sh1106@3c {
+        compatible = "sinowealth,sh1106";
+
+        reg = <0x3c>;
+        segment-offset = <0>;
+        page-offset = <0>;
+        display-offset = <0>;
+        multiplex-ratio = <63>;
+        segment-remap;
+        com-invdir;
+        com-sequential;
+        prechargep = <0x22>;
+        width = <128>;
+        height = <64>;
+    };
+};
+
+&gpioa {
+    rotary {
+        compatible = "gpio-keys";
+
+        rot_trig: rot_trig {
+            gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+            label = "Trigger";
+        };
+        rot_clkw: rot_clkw {
+            gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+            label = "Clockwise";
+        };
+        rot_but: rot_but {
+            gpios = <&gpioa 10 GPIO_ACTIVE_LOW>;
+            label = "Button";
+        };
+    };
+};
