@@ -174,7 +174,7 @@ typedef struct navigator {
  *
  * @param cnt Conteúdo a ser impresso.
  */
-inline void print_content(content_t cnt) {
+static inline void print_content(content_t cnt) {
     if (cnt.opt.is_bitmap) {
         sh1106_draw_bitmap(cnt.data, cnt.pos.x, cnt.pos.y, cnt.dim.width, cnt.dim.height);
     } else {
@@ -187,7 +187,7 @@ inline void print_content(content_t cnt) {
  *
  * @param cnt Conteúdo a ser impresso.
  */
-inline void print_content_rows(content_t cnt, uint8_t head_y) {
+static inline void print_content_rows(content_t cnt, uint8_t head_y) {
     if (cnt.opt.is_bitmap) {
         sh1106_draw_bitmap(cnt.data, cnt.pos.x, cnt.pos.y - head_y, cnt.dim.width, cnt.dim.height);
     } else {
@@ -201,7 +201,7 @@ inline void print_content_rows(content_t cnt, uint8_t head_y) {
  * @param[in] contents Conteúdos a serem impressos.
  * @param amount Número de conteúdos.
  */
-inline void print_contents(content_t* contents, uint8_t amount) {
+static inline void print_contents(content_t* contents, uint8_t amount) {
     for (uint8_t i = 0; i < amount; i++) {
         if (contents[i].opt.is_visible) {
             print_content(contents[i]);
@@ -215,7 +215,7 @@ inline void print_contents(content_t* contents, uint8_t amount) {
  * @param[in] contents Conteúdos a serem impressos.
  * @param amount Número de conteúdos.
  */
-inline void print_contents_rows(content_t* contents, uint8_t head_y, uint8_t amount) {
+static inline void print_contents_rows(content_t* contents, uint8_t head_y, uint8_t amount) {
     for (uint8_t i = 0; i < amount; i++) {
         if (contents[i].opt.is_visible) {
             print_content_rows(contents[i], head_y);

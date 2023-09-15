@@ -168,6 +168,8 @@ int main(void)
 
     astro_targets_init();
     sh1106_init();
+    sh1106_clear();
+    sh1106_flush();
     sh1106_draw_bitmap(eqmount_logo, 0, 0, EQM_LOGO_W, EQM_LOGO_H);
     sh1106_flush();
     HAL_Delay(2000);
