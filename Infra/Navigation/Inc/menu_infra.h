@@ -12,41 +12,45 @@
 #ifndef DEBUG_MENU_INFRA_H
 #define DEBUG_MENU_INFRA_H
 
+#include <stdio.h>
+#include <string.h>
+
 #include "eqm_settings.h"
 #include "fonts.h"
 #include "sh1106.h"
-#include <stdio.h>
-#include <string.h>
 
 #define STR_CONTENT_INIT(_data, _x, _y, _is_visible, _fnt) \
     {                                                      \
         .data = (uint8_t*) (_data),                        \
-        .pos = {                                           \
+        .pos =                                             \
+            {                                              \
                 .x = _x,                                   \
                 .y = _y,                                   \
-        },                                                 \
+            },                                             \
         .opt = {                                           \
-                .fnt = _fnt,                               \
-                .is_bitmap = false,                        \
-                .is_visible = _is_visible,                 \
+            .fnt        = _fnt,                            \
+            .is_bitmap  = false,                           \
+            .is_visible = _is_visible,                     \
         },                                                 \
     }
 
 #define BMP_CONTENT_INIT(_data, _x, _y, _w, _h, _is_visible) \
     {                                                        \
         .data = (uint8_t*) (_data),                          \
-        .pos = {                                             \
+        .pos =                                               \
+            {                                                \
                 .x = _x,                                     \
                 .y = _y,                                     \
-        },                                                   \
-        .dim = {                                             \
-                .width = _w,                                 \
+            },                                               \
+        .dim =                                               \
+            {                                                \
+                .width  = _w,                                \
                 .height = _h,                                \
-        },                                                   \
+            },                                               \
         .opt = {                                             \
-                .fnt = NULL,                                 \
-                .is_bitmap = true,                           \
-                .is_visible = _is_visible,                   \
+            .fnt        = NULL,                              \
+            .is_bitmap  = true,                              \
+            .is_visible = _is_visible,                       \
         },                                                   \
     }
 
@@ -64,9 +68,9 @@ typedef void (*const update_buffers_callback_t)(eqm_settings_t const*);
 typedef enum screen_modes {
     MONITOR_SCREEN = 0, /**< Tipo de tela cuja finalidade é mostrar informações. */
     SETTING_SCREEN,     /**< Tipo de tela cuja finalidade é modificar um atributo. */
-    OPTIONS_SCREEN,     /**< Tipo de tela onde novas opções são navegáveis e selecionáveis. */
-    CONFIRM_SCREEN,     /**< Tipo de tela cuja finalidade é confirmar uma ação. */
-    POPUP_SCREEN,       /**< Tipo de tela sobreponível que indica um evento. */
+    OPTIONS_SCREEN, /**< Tipo de tela onde novas opções são navegáveis e selecionáveis. */
+    CONFIRM_SCREEN, /**< Tipo de tela cuja finalidade é confirmar uma ação. */
+    POPUP_SCREEN,   /**< Tipo de tela sobreponível que indica um evento. */
 } screen_modes_t;
 
 /**
@@ -95,7 +99,7 @@ typedef enum screens {
  * @brief Descreve um conteúdo.
  */
 typedef struct content {
-    uint8_t* data; /**< Ponteiro para o conteúdo propriamente dito. */
+    const uint8_t* data; /**< Ponteiro para o conteúdo propriamente dito. */
 
     struct position {
         uint8_t x; /**< Posição horizontal do conteúdo na tela. */
@@ -105,7 +109,7 @@ typedef struct content {
     struct dimensions {
         uint8_t width;  /**< Largura horizontal do conteúdo na tela. */
         uint8_t height; /**< Altura vertical do conteúdo na tela. */
-    } dim;              /**< Detalha as informações de dimensões do conteúdo, usado para bitmaps. */
+    } dim; /**< Detalha as informações de dimensões do conteúdo, usado para bitmaps. */
 
     struct options {
         const font_t* fnt;      /**< Fonte do conteúdo, caso seja uma string. */
@@ -148,7 +152,6 @@ typedef struct navigator {
     screen_properties_t* current_screen;       /**< Ponteiro para a tela atual. */
 
     union control {
-
         struct monitor_ctrl {
             uint8_t update_threshold; /**< Limite onde a tela deve ser atualizada.*/
             uint8_t update_counter;   /**< Contador para atualização da tela. */
@@ -160,7 +163,8 @@ typedef struct navigator {
         } menu;
 
         struct confirm_screen {
-            uint8_t previous_screen_selection; /**< Identificador genérico da seleção precedente. */
+            uint8_t previous_screen_selection; /**< Identificador genérico da seleção
+                                                  precedente. */
             bool is_confirmed;
         } confirm;
     } ctrl;
@@ -176,9 +180,9 @@ typedef struct navigator {
  */
 static inline void print_content(content_t cnt) {
     if (cnt.opt.is_bitmap) {
-        sh1106_draw_bitmap(cnt.data, cnt.pos.x, cnt.pos.y, cnt.dim.width, cnt.dim.height);
+        sh1106_draw_bitmap(cnt.data, cnt.pos.y, cnt.pos.x, cnt.dim.width, cnt.dim.height);
     } else {
-        sh1106_print(cnt.data, cnt.pos.x, cnt.pos.y, cnt.opt.fnt);
+        sh1106_print(cnt.data, cnt.pos.y, cnt.pos.x, cnt.opt.fnt);
     }
 }
 
@@ -189,9 +193,10 @@ static inline void print_content(content_t cnt) {
  */
 static inline void print_content_rows(content_t cnt, uint8_t head_y) {
     if (cnt.opt.is_bitmap) {
-        sh1106_draw_bitmap(cnt.data, cnt.pos.x, cnt.pos.y - head_y, cnt.dim.width, cnt.dim.height);
+        sh1106_draw_bitmap(cnt.data, cnt.pos.y - head_y, cnt.pos.x, cnt.dim.width,
+                           cnt.dim.height);
     } else {
-        sh1106_print(cnt.data, cnt.pos.x, cnt.pos.y - head_y, cnt.opt.fnt);
+        sh1106_print(cnt.data, cnt.pos.y - head_y, cnt.pos.x, cnt.opt.fnt);
     }
 }
 
@@ -215,7 +220,8 @@ static inline void print_contents(content_t* contents, uint8_t amount) {
  * @param[in] contents Conteúdos a serem impressos.
  * @param amount Número de conteúdos.
  */
-static inline void print_contents_rows(content_t* contents, uint8_t head_y, uint8_t amount) {
+static inline void print_contents_rows(content_t* contents, uint8_t head_y,
+                                       uint8_t amount) {
     for (uint8_t i = 0; i < amount; i++) {
         if (contents[i].opt.is_visible) {
             print_content_rows(contents[i], head_y);
@@ -223,4 +229,4 @@ static inline void print_contents_rows(content_t* contents, uint8_t head_y, uint
     }
 }
 
-#endif//DEBUG_MENU_INFRA_H
+#endif  // DEBUG_MENU_INFRA_H
