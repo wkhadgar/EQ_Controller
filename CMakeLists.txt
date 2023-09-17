@@ -49,7 +49,7 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Core/Inc Drivers/STM32F1xx_HAL_Driver/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/CMSIS/Include Drivers/nRF24L01_STM32/Inc Drivers/SH1106_I2C/Inc Drivers/Rotary/Inc Infra/Navigation/Inc Infra/EQ_Comm/Inc App/Inc)
+include_directories(Core/Inc Drivers/STM32F1xx_HAL_Driver/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/CMSIS/Include Drivers/nRF24L01_STM32/Inc Drivers/SH1106-I2C/Inc Drivers/Rotary/Inc Infra/Navigation/Inc Infra/EQ_Comm/Inc App/Inc)
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB)
 

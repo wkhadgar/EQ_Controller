@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef DEBUG_MENU_INFRA_H
-#define DEBUG_MENU_INFRA_H
+#ifndef MENU_INFRA_H
+#define MENU_INFRA_H
 
 #include <stdio.h>
 #include <string.h>
@@ -229,4 +229,4 @@ static inline void print_contents_rows(content_t* contents, uint8_t head_y,
     }
 }
 
-#endif  // DEBUG_MENU_INFRA_H
+#endif /* MENU_INFRA_H */
