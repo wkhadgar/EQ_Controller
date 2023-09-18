@@ -129,7 +129,8 @@ typedef struct screen_style {
         const uint8_t content_amount; /**< Quantidade de conteúdos na página. */
     } details;
 
-    const screens_t* const next_screens;
+    const screens_t* const short_press_next_screens;
+    const screens_t* const long_press_next_screens;
 
     update_buffers_callback_t update_buffers;
 
@@ -152,11 +153,6 @@ typedef struct navigator {
     screen_properties_t* current_screen;       /**< Ponteiro para a tela atual. */
 
     union control {
-        struct monitor_ctrl {
-            uint8_t update_threshold; /**< Limite onde a tela deve ser atualizada.*/
-            uint8_t update_counter;   /**< Contador para atualização da tela. */
-        } monitor;
-
         struct menu_ctrl {
             uint8_t head;      /**< Inicio atual do menu na tela. */
             uint8_t selection; /**< Seleção atual do menu na tela. */

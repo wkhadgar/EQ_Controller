@@ -15,15 +15,17 @@ typedef enum update_home_confirm_contents {
 } update_home_confirm_contents_t;
 
 static content_t updt_home_conf_cnts[UPDT_HOME_CONF_CONTENTS_AMOUNT] = {
-        [UPDT_HOME_CONF_HEADER] = STR_CONTENT_INIT("(!) Are you sure to", 2, 2, true, &fnt5x7),
-        [UPDT_HOME_CONF_SUB_HEADER] = STR_CONTENT_INIT("    update home?", 2, 10, true, &fnt5x7),
-        [UPDT_HOME_CONF_NO] = STR_CONTENT_INIT("No", 22, 30, true, &fnt7x10),
-        [UPDT_HOME_CONF_YES] = STR_CONTENT_INIT("Yes", 82, 30, true, &fnt7x10),
-        [UPDT_HOME_INDICATOR_BITMAP] = BMP_CONTENT_INIT(arrow, 14, 33, CUSTOM_CHAR_W, CUSTOM_CHAR_H, true),
+    [UPDT_HOME_CONF_HEADER] =
+        STR_CONTENT_INIT("(!) Are you sure to", 2, 2, true, &fnt5x7),
+    [UPDT_HOME_CONF_SUB_HEADER] =
+        STR_CONTENT_INIT("    update home?", 2, 10, true, &fnt5x7),
+    [UPDT_HOME_CONF_NO]  = STR_CONTENT_INIT("No", 22, 30, true, &fnt7x10),
+    [UPDT_HOME_CONF_YES] = STR_CONTENT_INIT("Yes", 82, 30, true, &fnt7x10),
+    [UPDT_HOME_INDICATOR_BITMAP] =
+        BMP_CONTENT_INIT(arrow, 14, 33, CUSTOM_CHAR_W, CUSTOM_CHAR_H, true),
 };
 
 static void confirm_cb(bool is_confirm, int8_t dir, eqm_settings_t* settings) {
-
     if (is_confirm) {
 #ifdef USE_NRF24L01
         nrf24_data_t updt_home_cmd;
@@ -40,21 +42,27 @@ static void confirm_cb(bool is_confirm, int8_t dir, eqm_settings_t* settings) {
     }
 }
 
-static const screens_t updt_home_conf_flow_screens[2] = {
-        [false] = SCR_O_MAIN_MENU,
-        [true] = SCR_M_HOME,
+static const screens_t updt_home_conf_flow_s_screens[2] = {
+    [false] = SCR_O_MAIN_MENU,
+    [true]  = SCR_M_HOME,
+};
+
+static const screens_t updt_home_conf_flow_l_screens[] = {
+    SCR_O_MAIN_MENU,
 };
 
 screen_properties_t updt_home_conf_screen = {
-        .details = {
-                .id = SCR_CONFIRM_UPDATE_HOME,
-                .type = CONFIRM_SCREEN,
-                .content_amount = UPDT_HOME_CONF_CONTENTS_AMOUNT,
+    .details =
+        {
+            .id             = SCR_CONFIRM_UPDATE_HOME,
+            .type           = CONFIRM_SCREEN,
+            .content_amount = UPDT_HOME_CONF_CONTENTS_AMOUNT,
         },
-        .next_screens = updt_home_conf_flow_screens,
-        .contents = updt_home_conf_cnts,
-        .cursor_bitmap = NULL,
-        .confirm_callback = &confirm_cb,
-        .update_buffers = NULL,
-        .post_draw_callback = NULL,
+    .short_press_next_screens = updt_home_conf_flow_s_screens,
+    .long_press_next_screens  = updt_home_conf_flow_l_screens,
+    .contents                 = updt_home_conf_cnts,
+    .cursor_bitmap            = NULL,
+    .confirm_callback         = &confirm_cb,
+    .update_buffers           = NULL,
+    .post_draw_callback       = NULL,
 };

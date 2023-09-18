@@ -19,8 +19,7 @@ static void cont_time_draws(void) {
 }
 
 static void update_buffers(eqm_settings_t const* settings) {
-    sprintf((char*) cont_time_buffer, "%03ds",
-            settings->screen_contrast_time);
+    sprintf((char*) cont_time_buffer, "%03ds", settings->screen_contrast_time);
 }
 
 static void contrast_time_handler(int8_t dir, eqm_settings_t* setting) {
@@ -36,27 +35,36 @@ static void contrast_time_handler(int8_t dir, eqm_settings_t* setting) {
 }
 
 static content_t cont_time_cnts[CONT_TIME_CONTENTS_AMOUNT] = {
-        [CONT_TIME_HEADER] = STR_CONTENT_INIT("Contrasted Time:", 2, 2, true, &fnt5x7),
-        [CONT_TIME_VALUE] = STR_CONTENT_INIT(cont_time_buffer, 47, 30, true, &fnt7x10),
+    [CONT_TIME_HEADER] = STR_CONTENT_INIT("Contrasted Time:", 2, 2, true, &fnt5x7),
+    [CONT_TIME_VALUE]  = STR_CONTENT_INIT(cont_time_buffer, 47, 30, true, &fnt7x10),
 };
 
 /**
  * @brief Fluxo de destino da tela de configuração de ascensão reta.
  */
-static const screens_t contrast_time_flow_screens[] = {
-        SCR_O_MAIN_MENU,
+static const screens_t contrast_time_flow_s_screens[] = {
+    SCR_M_HOME,
+};
+
+/**
+ * @brief Fluxo de destino da tela de configuração de ascensão reta.
+ */
+static const screens_t contrast_time_flow_l_screens[] = {
+    SCR_O_MAIN_MENU,
 };
 
 screen_properties_t contrast_time_screen = {
-        .details = {
-                .id = SCR_S_CONTRAST_VAL,
-                .type = SETTING_SCREEN,
-                .content_amount = CONT_TIME_CONTENTS_AMOUNT,
+    .details =
+        {
+            .id             = SCR_S_CONTRAST_VAL,
+            .type           = SETTING_SCREEN,
+            .content_amount = CONT_TIME_CONTENTS_AMOUNT,
         },
-        .next_screens = contrast_time_flow_screens,
-        .contents = cont_time_cnts,
-        .cursor_bitmap = NULL,
-        .setting_callback = &contrast_time_handler,
-        .update_buffers = &update_buffers,
-        .post_draw_callback = &cont_time_draws,
+    .short_press_next_screens = contrast_time_flow_s_screens,
+    .long_press_next_screens  = contrast_time_flow_l_screens,
+    .contents                 = cont_time_cnts,
+    .cursor_bitmap            = NULL,
+    .setting_callback         = &contrast_time_handler,
+    .update_buffers           = &update_buffers,
+    .post_draw_callback       = &cont_time_draws,
 };

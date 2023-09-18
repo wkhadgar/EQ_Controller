@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2022 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2022 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -23,7 +23,6 @@
 #include "rtc.h"
 #include "spi.h"
 #include "tim.h"
-#include "usb.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -62,36 +61,17 @@
 
 /* USER CODE BEGIN PV */
 
-char* mode_menu_strings[EQM_MODES_AMOUNT] = {
-        [MANUAL_MODE] = "Manual Mode",
-        [TRACKING_MODE] = "Start Tracking",
-        [GOTO_MODE] = "Go to Target",
-        [OFF_MODE] = "Free Movement"};
+char* mode_menu_strings[EQM_MODES_AMOUNT] = {[MANUAL_MODE]   = "Manual Mode",
+                                             [TRACKING_MODE] = "Start Tracking",
+                                             [GOTO_MODE]     = "Go to Target",
+                                             [OFF_MODE]      = "Free Movement"};
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void menu_process(navigator_t* navigator, eqm_settings_t const* settings) {
-    switch (navigator->current_screen->details.type) {
 
-        case MONITOR_SCREEN:
-            navigator->ctrl.monitor.update_counter++;
-            if (navigator->ctrl.monitor.update_counter >=
-                navigator->ctrl.monitor.update_threshold) {
-                navigator->ctrl.monitor.update_counter = 0;
-                navigator->has_changes = true;
-            }
-            break;
-        default:
-            break;
-    }
-
-    if (navigator->has_changes) {
-        update_screen(navigator, settings);
-    }
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -99,7 +79,6 @@ void menu_process(navigator_t* navigator, eqm_settings_t const* settings) {
 
 #ifdef USE_NRF24L01
 void nRF24_TX_ESB_setup(const uint8_t* addr) {
-
     // Do the initial configurations.
     nRF24_init(addr, 110);
     nRF24_StopListening();
@@ -117,24 +96,26 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
     eqm_settings_t settings = {
-            .DEC.decimal_degrees = 0,
-            .RA.decimal_hours = 0,
-            .screen_contrast = 100,
-            .screen_contrast_time = 100,
-            .mode = OFF_MODE,
-            .hemisphere = SOUTH,
+        .DEC.decimal_degrees  = 0,
+        .RA.decimal_hours     = 0,
+        .screen_contrast      = 100,
+        .screen_contrast_time = 100,
+        .mode                 = OFF_MODE,
+        .hemisphere           = SOUTH,
     };
 
     navigator_t navigator = {
-            .screens = screens_adresses,
-            .current_screen = &monitor_screen,
-            .ctrl = {
-                    .menu = {
-                            .head = 0,
-                            .selection = 0,
+        .screens        = screens_adresses,
+        .current_screen = &monitor_screen,
+        .ctrl =
+            {
+                .menu =
+                    {
+                        .head      = 0,
+                        .selection = 0,
                     },
             },
-            .has_changes = true,
+        .has_changes = true,
     };
 
 
@@ -163,9 +144,8 @@ int main(void)
   MX_SPI2_Init();
   MX_TIM3_Init();
   MX_RTC_Init();
-  MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
-
+    HAL_TIM_Base_Stop(&htim3);
     astro_targets_init();
     sh1106_init();
     sh1106_clear();
@@ -201,7 +181,9 @@ int main(void)
             handle_rotary_event(&navigator, &settings);
         }
 
-        menu_process(&navigator, &settings);
+        if (navigator.has_changes) {
+            update_screen(&navigator, &settings);
+        }
     }
   /* USER CODE END 3 */
 }
@@ -226,7 +208,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -241,77 +223,79 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_ADC
-                              |RCC_PERIPHCLK_USB;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_ADC;
   PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV4;
-  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
+
+  /** Enables the Clock Security System
+  */
+  HAL_RCC_EnableCSS();
 }
 
 /* USER CODE BEGIN 4 */
-//static void update_home_handler() {
-//    nrf24_data_t out_msg;
-//    nrf24_data_t in_msg;
-//    transf_t t;
-//    uint8_t pld_len;
+// static void update_home_handler() {
+//     nrf24_data_t out_msg;
+//     nrf24_data_t in_msg;
+//     transf_t t;
+//     uint8_t pld_len;
 //
-//    nRF24_PrepareData("GET_DEC_RA_HOME", 15, REQUEST, &out_msg);
-//    while (!nRF24_Talk(out_msg, &in_msg, nRF24_MODE_TX))
-//        ;
-//    nRF24_RetrieveData(in_msg, &settings_values.RA);
-//}
+//     nRF24_PrepareData("GET_DEC_RA_HOME", 15, REQUEST, &out_msg);
+//     while (!nRF24_Talk(out_msg, &in_msg, nRF24_MODE_TX))
+//         ;
+//     nRF24_RetrieveData(in_msg, &settings_values.RA);
+// }
 
-//static void target_menu_select_handler(target_t selected) {
-//    astro_target_t tgt;
+// static void target_menu_select_handler(target_t selected) {
+//     astro_target_t tgt;
 //
-//    if (selected > _TARGET_AMOUNT) {
-//        return;
-//    }
+//     if (selected > _TARGET_AMOUNT) {
+//         return;
+//     }
 //
-//    tgt = astro_target_get(selected);
-//    settings_values.RA = tgt.position.right_ascension;
-//    settings_values.DEC = tgt.position.declination;
-//}
+//     tgt = astro_target_get(selected);
+//     settings_values.RA = tgt.position.right_ascension;
+//     settings_values.DEC = tgt.position.declination;
+// }
 
-//static void mode_menu_select_handler(settings_t* settings, eqm_mode_t select) {
-//    nrf24_data_t mode_set_msg;
+// static void mode_menu_select_handler(settings_t* settings, eqm_mode_t select) {
+//     nrf24_data_t mode_set_msg;
 //
-//    if (select > EQM_MODES_AMOUNT) {
-//        return;
-//    }
+//     if (select > EQM_MODES_AMOUNT) {
+//         return;
+//     }
 //
-//    settings.mode = select;
-//    switch (select) {
+//     settings.mode = select;
+//     switch (select) {
 //
-//        case MANUAL_MODE:
-//            nRF24_PrepareData("MANUAL", 7, COMMAND, &mode_set_msg);
-//            break;
-//        case TRACKING_MODE:
-//            nRF24_PrepareData("TRACK", 6, COMMAND, &mode_set_msg);
-//            break;
-//        case GOTO_MODE:
-//            nRF24_PrepareData("GOTO", 5, COMMAND, &mode_set_msg);
-//            break;
-//        case OFF_MODE:
-//            nRF24_PrepareData("RELEASE", 8, COMMAND, &mode_set_msg);
-//            break;
-//        default:
-//            nRF24_PrepareData("NOP", 4, COMMAND, &mode_set_msg);
-//            break;
-//    }
+//         case MANUAL_MODE:
+//             nRF24_PrepareData("MANUAL", 7, COMMAND, &mode_set_msg);
+//             break;
+//         case TRACKING_MODE:
+//             nRF24_PrepareData("TRACK", 6, COMMAND, &mode_set_msg);
+//             break;
+//         case GOTO_MODE:
+//             nRF24_PrepareData("GOTO", 5, COMMAND, &mode_set_msg);
+//             break;
+//         case OFF_MODE:
+//             nRF24_PrepareData("RELEASE", 8, COMMAND, &mode_set_msg);
+//             break;
+//         default:
+//             nRF24_PrepareData("NOP", 4, COMMAND, &mode_set_msg);
+//             break;
+//     }
 //
-//    while (!nRF24_Talk(mode_set_msg, NULL, nRF24_MODE_TX)) {
-//        HAL_Delay(10);
-//    }
-//}
+//     while (!nRF24_Talk(mode_set_msg, NULL, nRF24_MODE_TX)) {
+//         HAL_Delay(10);
+//     }
+// }
 
 /*
 void load_list_menu_changes(void) {
@@ -352,8 +336,9 @@ static void show_declination(char* buffer, uint8_t x_offset, uint8_t y_offset) {
     sprintf(buffer, "%02d", settings_values.DEC.degrees);
     x_shift += SH1106_printStr(x_offset, y_offset, buffer, &fnt7x10);
     x_shift += SH1106_printStr(x_shift, y_offset - 3, "o", &fnt7x10);
-    sprintf(buffer, "%02d'%02d\"", settings_values.DEC.arc_minutes, settings_values.DEC.arc_seconds);
-    SH1106_printStr(x_shift + 2, y_offset, buffer, &fnt7x10);
+    sprintf(buffer, "%02d'%02d\"", settings_values.DEC.arc_minutes,
+settings_values.DEC.arc_seconds); SH1106_printStr(x_shift + 2, y_offset, buffer,
+&fnt7x10);
 }
 
 void show_target_menu() {
@@ -441,14 +426,10 @@ void show_settings_adjust(settings_t setting) {
             SH1106_printStr(X_OFFSET + 26, Y_OFFSET, buffer, &fnt7x10);
             break;
         case HEMISPHERE_SETTINGS:
-            sprintf(buffer, "%s", (settings_values.hemisphere == NORTH) ? "North" : "South");
-            SH1106_printStr(X_OFFSET + 6, Y_OFFSET, buffer, &fnt7x10);
-            SH1106_drawBitmap(80, Y_OFFSET - 6, SETTINGS_BITMAP_W, SETTINGS_BITMAP_H,
-                              settings_values.hemisphere == NORTH ? north_hemisphere : south_hemisphere);
-            break;
-        case NONE:
-        default:
-            break;
+            sprintf(buffer, "%s", (settings_values.hemisphere == NORTH) ? "North" :
+"South"); SH1106_printStr(X_OFFSET + 6, Y_OFFSET, buffer, &fnt7x10); SH1106_drawBitmap(80,
+Y_OFFSET - 6, SETTINGS_BITMAP_W, SETTINGS_BITMAP_H, settings_values.hemisphere == NORTH ?
+north_hemisphere : south_hemisphere); break; case NONE: default: break;
     }
 
     SH1106_flush();
@@ -509,14 +490,16 @@ void load_settings_changes(void) {
         switch (screen.kind.setting) {
             case DEC_SETTINGS:
                 ((angle_t*) setting)->decimal_degrees = tmp_value / 3600.0;
-                tmp_value = tmp_value >= 0 ? tmp_value : -tmp_value;//Correcting signedness;
+                tmp_value = tmp_value >= 0 ? tmp_value : -tmp_value;//Correcting
+signedness;
                 ((angle_t*) setting)->degrees = (int16_t) ((tmp_value / 3600) % 360);
                 ((angle_t*) setting)->arc_minutes = (tmp_value / 60) % 60;
                 ((angle_t*) setting)->arc_seconds = tmp_value % 60;
                 break;
             case RA_SETTINGS:
                 ((time__t*) setting)->decimal_hours = tmp_value / 3600.0;
-                tmp_value = tmp_value >= 0 ? tmp_value : -tmp_value;//Correcting signedness;
+                tmp_value = tmp_value >= 0 ? tmp_value : -tmp_value;//Correcting
+signedness;
                 ((time__t*) setting)->hours = (tmp_value / 3600) % 24;
                 ((time__t*) setting)->minutes = (tmp_value / 60) % 60;
                 ((time__t*) setting)->seconds = tmp_value % 60;
